@@ -2,7 +2,7 @@
 // 全域設定與狀態
 // ==========================================
 // 【重要】請將下方網址替換為你最新的 Google Apps Script 部署 URL (結尾是 /exec)
-const GAS_API_URL = 'https://script.google.com/macros/s/你的部署ID/exec'; 
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzj7n9sOar-So8_Yy-7gwr5EokeqoDRJFzjWOMxBfn--AtgcERVapjitNureZF-2sYx/exec'; 
 
 let currentUser = null;
 let currentDate = new Date().toISOString().split('T')[0];
