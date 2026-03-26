@@ -2,7 +2,7 @@
 // 全域設定與狀態
 // ==========================================
 // 【重要】請將下方網址替換為你最新的 Google Apps Script 部署 URL (結尾是 /exec)
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzj7n9sOar-So8_Yy-7gwr5EokeqoDRJFzjWOMxBfn--AtgcERVapjitNureZF-2sYx/exec'; 
+const GAS_API_URL = 'https://script.google.com/macros/s/你的部署ID/exec'; 
 
 let currentUser = null;
 let currentDate = new Date().toISOString().split('T')[0];
@@ -14,6 +14,10 @@ async function apiCall(action, payload) {
   try {
     const response = await fetch(GAS_API_URL, {
       method: 'POST',
+      // 加入這行 headers，告訴 GAS 我們傳的是純文字，避免 CORS 阻擋
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8',
+      },
       body: JSON.stringify({ action: action, payload: payload }),
       redirect: 'follow' 
     });
@@ -108,9 +112,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // --- 4. 登出 ---
+  // --- 4. 登出 (已修復畫面殘留問題) ---
   document.getElementById('btn-logout').addEventListener('click', () => {
     currentUser = null;
+    
+    // 1. 清空表單輸入內容
+    document.getElementById('login-form').reset();
+    document.getElementById('register-form').reset();
+    
+    // 2. 強制把畫面切換回「登入表單」
+    document.getElementById('register-form').classList.add('hidden');
+    document.getElementById('login-form').classList.remove('hidden');
+    
+    // 3. 切換回認證畫面
     showView('auth-view');
   });
 
