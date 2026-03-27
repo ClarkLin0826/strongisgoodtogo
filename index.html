@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NutriLens - 熱量與營養素追蹤</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.json">
   <meta name="mobile-web-app-capable" content="yes">
@@ -211,18 +212,49 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-3 gap-3">
-          <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-100 text-center">
-            <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">蛋白質</p>
-            <p class="text-lg font-bold text-blue-500"><span id="macro-protein">0</span>g</p>
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center gap-4">
+          <div class="w-[45%] relative flex justify-center items-center">
+            <canvas id="macroChart" class="w-full max-w-[120px] max-h-[120px]"></canvas>
+            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">總計</span>
+              <span id="macro-total" class="text-xs font-black text-slate-700">0g</span>
+            </div>
           </div>
-          <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-100 text-center">
-            <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">碳水</p>
-            <p class="text-lg font-bold text-amber-500"><span id="macro-carbs">0</span>g</p>
+          <div class="w-[55%] space-y-3">
+            <div>
+              <div class="flex justify-between items-end mb-1">
+                <p class="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span>蛋白質 (P)</p>
+                <p class="text-xs font-bold text-blue-600"><span id="macro-protein">0</span>g</p>
+              </div>
+              <div class="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100">
+                <div id="bar-protein" class="h-full bg-blue-500 transition-all duration-500" style="width: 0%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between items-end mb-1">
+                <p class="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span>碳水 (C)</p>
+                <p class="text-xs font-bold text-amber-600"><span id="macro-carbs">0</span>g</p>
+              </div>
+              <div class="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100">
+                <div id="bar-carbs" class="h-full bg-amber-500 transition-all duration-500" style="width: 0%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between items-end mb-1">
+                <p class="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500"></span>脂肪 (F)</p>
+                <p class="text-xs font-bold text-rose-600"><span id="macro-fat">0</span>g</p>
+              </div>
+              <div class="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100">
+                <div id="bar-fat" class="h-full bg-rose-500 transition-all duration-500" style="width: 0%"></div>
+              </div>
+            </div>
           </div>
-          <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-100 text-center">
-            <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">脂肪</p>
-            <p class="text-lg font-bold text-rose-500"><span id="macro-fat">0</span>g</p>
+        </div>
+
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+          <h3 class="font-bold text-slate-800 text-sm mb-3">📈 近七日淨熱量趨勢</h3>
+          <div class="w-full h-40">
+            <canvas id="weeklyChart"></canvas>
           </div>
         </div>
 

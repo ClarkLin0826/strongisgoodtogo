@@ -9,6 +9,8 @@ let currentDate = new Date().toISOString().split('T')[0];
 let foodDatabase = { categories: [], foods: [] };
 let selectedFoodBase = null;
 let dietCart = [];
+let macrosChartInstance = null;
+let weeklyChartInstance = null;
 
 // ==========================================
 // 核心 API 呼叫函式
@@ -843,13 +845,52 @@ async function loadDailyData() {
   showLoading('載入資料中...');
   
   const res = await apiCall('getDailyStats', { userId: currentUser.user_id, targetDate: currentDate });
-  hideLoading();
   
   if (res.success) {
     updateDashboardUI(res.stats);
+    
+    const weekRes = await apiCall('getWeeklyStats', { userId: currentUser.user_id, targetDate: currentDate });
+    hideLoading();
+    
+    if (weekRes.success) {
+      renderWeeklyChart(weekRes.stats);
+    }
   } else {
+    hideLoading();
     alert(res.message);
   }
+}
+
+function renderWeeklyChart(weeklyStats) {
+  const ctxWeek = document.getElementById('weeklyChart');
+  if (!ctxWeek) return;
+  
+  if (weeklyChartInstance) weeklyChartInstance.destroy();
+  
+  const labels = weeklyStats.map(s => s.label);
+  const netCals = weeklyStats.map(s => s.in - s.out);
+  
+  weeklyChartInstance = new Chart(ctxWeek.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: '淨攝取熱量 (kcal)',
+        data: netCals,
+        backgroundColor: netCals.map(v => v > 0 ? '#6366f1' : '#10b981'),
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, grid: { color: '#f1f5f9', borderDash: [4, 4] }, border: { display: false } },
+        x: { grid: { display: false }, border: { display: false } }
+      }
+    }
+  });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -936,6 +977,42 @@ function updateDashboardUI(stats) {
   document.getElementById('macro-protein').innerText = stats.protein;
   document.getElementById('macro-carbs').innerText = stats.carbs;
   document.getElementById('macro-fat').innerText = stats.fat;
+
+  const totalMacros = stats.protein + stats.carbs + stats.fat;
+  document.getElementById('macro-total').innerText = totalMacros > 0 ? `${Math.round(totalMacros)}g` : '0g';
+  
+  if (totalMacros > 0) {
+    document.getElementById('bar-protein').style.width = `${(stats.protein / totalMacros) * 100}%`;
+    document.getElementById('bar-carbs').style.width = `${(stats.carbs / totalMacros) * 100}%`;
+    document.getElementById('bar-fat').style.width = `${(stats.fat / totalMacros) * 100}%`;
+  } else {
+    document.getElementById('bar-protein').style.width = '0%';
+    document.getElementById('bar-carbs').style.width = '0%';
+    document.getElementById('bar-fat').style.width = '0%';
+  }
+
+  const ctxMacro = document.getElementById('macroChart');
+  if (ctxMacro) {
+    if (macrosChartInstance) macrosChartInstance.destroy();
+    macrosChartInstance = new Chart(ctxMacro.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: ['蛋白質', '碳水', '脂肪'],
+        datasets: [{
+          data: totalMacros === 0 ? [1, 1, 1] : [stats.protein, stats.carbs, stats.fat],
+          backgroundColor: totalMacros === 0 ? ['#f1f5f9', '#f1f5f9', '#f1f5f9'] : ['#3b82f6', '#f59e0b', '#f43f5e'],
+          borderWidth: 0,
+          cutout: '75%'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { tooltip: { enabled: totalMacros > 0 }, legend: { display: false } },
+        animation: { duration: 800 }
+      }
+    });
+  }
 
   // 總缺口進度卡片渲染
   const goalStr = String(currentUser.goal || '');
