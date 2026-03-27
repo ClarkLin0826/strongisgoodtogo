@@ -115,7 +115,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const now = new Date().getTime();
       if (now - parseInt(cachedTime) < 604800000) { // 7 天
         currentUser = JSON.parse(cachedUser);
-        setTimeout(initDashboard, 0);
+        setTimeout(() => {
+           initDashboard();
+           const disp = currentUser.username || currentUser.email.split('@')[0];
+           showToast(`歡迎回來，${disp}！`, 'success');
+        }, 0);
       } else {
         localStorage.removeItem('nutriLens_user');
         localStorage.removeItem('nutriLens_time');
@@ -167,6 +171,8 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.setItem('nutriLens_user', JSON.stringify(currentUser));
       localStorage.setItem('nutriLens_time', new Date().getTime().toString());
       initDashboard();
+      const disp = currentUser.username || currentUser.email.split('@')[0];
+      showToast(`歡迎回來，${disp}！`, 'success');
     } else {
       showToast(res.message, 'error');
     }
@@ -913,53 +919,96 @@ document.addEventListener('DOMContentLoaded', () => {
 
 });
 
+// --- 全局 Modal 確認框函式 ---
+window.showConfirmModal = function(message, onConfirmCallback) {
+  const modal = document.getElementById('confirm-modal');
+  const box = document.getElementById('confirm-box');
+  const msgEl = document.getElementById('confirm-message');
+  const btnOk = document.getElementById('btn-confirm-ok');
+  const btnCancel = document.getElementById('btn-confirm-cancel');
+  
+  if (!modal) {
+     if (confirm(message)) onConfirmCallback();
+     return;
+  }
+  
+  msgEl.innerText = message;
+  
+  // 清除舊的事件綁定
+  const newBtnOk = btnOk.cloneNode(true);
+  const newBtnCancel = btnCancel.cloneNode(true);
+  btnOk.parentNode.replaceChild(newBtnOk, btnOk);
+  btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
+  
+  const closeModal = () => {
+    modal.classList.remove('opacity-100');
+    box.classList.remove('scale-100');
+    box.classList.add('scale-95');
+    setTimeout(() => { modal.classList.add('hidden'); }, 300);
+  };
+
+  newBtnCancel.addEventListener('click', closeModal);
+  newBtnOk.addEventListener('click', () => {
+    closeModal();
+    onConfirmCallback();
+  });
+  
+  modal.classList.remove('hidden');
+  // 利用 requestAnimationFrame 確保 transition 觸發
+  requestAnimationFrame(() => {
+    modal.classList.add('opacity-100');
+    box.classList.remove('scale-95');
+    box.classList.add('scale-100');
+  });
+};
+
 // --- 全域方法：供 HTML onclick 呼叫刪除 ---
-window.deleteLogEntry = async function (logId, logType) {
-  if (!confirm('確定要刪除這筆紀錄嗎？(雲端紀錄也將同步刪除)')) return;
-
-  // 樂觀執行本地刪除與畫面更新
-  if (logType === 'diet' && window.currentDailyStats) {
-    const idx = window.currentDailyStats.dietLogs.findIndex(x => x.log_id === logId);
-    if (idx > -1) {
-      const log = window.currentDailyStats.dietLogs[idx];
-      window.currentDailyStats.caloriesIn -= (Number(log.calories) || 0);
-      window.currentDailyStats.protein -= (Number(log.protein) || 0);
-      window.currentDailyStats.carbs -= (Number(log.carbs) || 0);
-      window.currentDailyStats.fat -= (Number(log.fat) || 0);
-      
-      if (window.currentWeeklyStats && window.currentWeeklyStats.length > 0) {
-        window.currentWeeklyStats[window.currentWeeklyStats.length - 1].in -= (Number(log.calories) || 0);
+window.deleteLogEntry = function (logId, logType) {
+  window.showConfirmModal('確定要刪除這筆紀錄嗎？(雲端紀錄也將同步刪除)', async () => {
+    // 樂觀執行本地刪除與畫面更新
+    if (logType === 'diet' && window.currentDailyStats) {
+      const idx = window.currentDailyStats.dietLogs.findIndex(x => x.log_id === logId);
+      if (idx > -1) {
+        const log = window.currentDailyStats.dietLogs[idx];
+        window.currentDailyStats.caloriesIn -= (Number(log.calories) || 0);
+        window.currentDailyStats.protein -= (Number(log.protein) || 0);
+        window.currentDailyStats.carbs -= (Number(log.carbs) || 0);
+        window.currentDailyStats.fat -= (Number(log.fat) || 0);
+        
+        if (window.currentWeeklyStats && window.currentWeeklyStats.length > 0) {
+          window.currentWeeklyStats[window.currentWeeklyStats.length - 1].in -= (Number(log.calories) || 0);
+        }
+        
+        window.currentDailyStats.dietLogs.splice(idx, 1);
+        updateDashboardUI(window.currentDailyStats);
+        if (window.currentWeeklyStats) renderWeeklyChart(window.currentWeeklyStats);
       }
-      
-      window.currentDailyStats.dietLogs.splice(idx, 1);
-      updateDashboardUI(window.currentDailyStats);
-      if (window.currentWeeklyStats) renderWeeklyChart(window.currentWeeklyStats);
-    }
-  } else if (logType === 'exercise' && window.currentDailyStats) {
-    const idx = window.currentDailyStats.exerciseLogs.findIndex(x => x.log_id === logId);
-    if (idx > -1) {
-      const log = window.currentDailyStats.exerciseLogs[idx];
-      window.currentDailyStats.caloriesOut -= (Number(log.calories_burned) || 0);
-      
-      if (window.currentWeeklyStats && window.currentWeeklyStats.length > 0) {
-        window.currentWeeklyStats[window.currentWeeklyStats.length - 1].out -= (Number(log.calories_burned) || 0);
+    } else if (logType === 'exercise' && window.currentDailyStats) {
+      const idx = window.currentDailyStats.exerciseLogs.findIndex(x => x.log_id === logId);
+      if (idx > -1) {
+        const log = window.currentDailyStats.exerciseLogs[idx];
+        window.currentDailyStats.caloriesOut -= (Number(log.calories_burned) || 0);
+        
+        if (window.currentWeeklyStats && window.currentWeeklyStats.length > 0) {
+          window.currentWeeklyStats[window.currentWeeklyStats.length - 1].out -= (Number(log.calories_burned) || 0);
+        }
+        
+        window.currentDailyStats.exerciseLogs.splice(idx, 1);
+        updateDashboardUI(window.currentDailyStats);
+        if (window.currentWeeklyStats) renderWeeklyChart(window.currentWeeklyStats);
       }
-      
-      window.currentDailyStats.exerciseLogs.splice(idx, 1);
-      updateDashboardUI(window.currentDailyStats);
-      if (window.currentWeeklyStats) renderWeeklyChart(window.currentWeeklyStats);
     }
-  }
 
-  // 發送同步資訊給雲端
-  const res = await apiCall('deleteLog', { logId, logType });
+    // 發送同步資訊給雲端
+    const res = await apiCall('deleteLog', { logId, logType });
 
-  if (!res.success) {
-    showToast('與伺服器同步刪除失敗', 'error');
-    loadDailyData(); // rollback UI
-  } else {
-    showToast('紀錄已同步刪除！');
-  }
+    if (!res.success) {
+      showToast('與伺服器同步刪除失敗', 'error');
+      loadDailyData(); // rollback UI
+    } else {
+      showToast('紀錄已同步刪除！');
+    }
+  });
 };
 
 // ==========================================

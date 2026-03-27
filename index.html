@@ -621,6 +621,18 @@
     </div>
 
   </div>
+  <!-- 全局 Confirm Modal 容器 -->
+  <div id="confirm-modal" class="fixed inset-0 bg-slate-900/60 z-[110] flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-300">
+    <div class="bg-white rounded-3xl p-6 w-10/12 max-w-sm shadow-2xl transform scale-95 transition-transform duration-300" id="confirm-box">
+      <h3 class="text-lg font-bold text-slate-800 mb-2">⚠️ 系統確認</h3>
+      <p id="confirm-message" class="text-sm text-slate-500 mb-6 leading-relaxed">您確定要執行此操作嗎？</p>
+      <div class="flex gap-3">
+        <button id="btn-confirm-cancel" class="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition">取消</button>
+        <button id="btn-confirm-ok" class="flex-1 py-3 bg-rose-500 text-white font-bold rounded-xl shadow-md hover:bg-rose-600 shadow-rose-500/30 transition">確定刪除</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 全局 Toast 通知容器 -->
   <div id="toast-container" class="fixed top-6 left-1/2 -translate-x-1/2 z-[100] flex flex-col items-center gap-3 pointer-events-none w-11/12 max-w-sm"></div>
   <script src="app.js"></script>
