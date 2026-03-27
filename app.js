@@ -54,16 +54,45 @@ function hideLoading() {
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
 
-  // --- 1. 登入/註冊切換 ---
+  const cachedUser = localStorage.getItem('nutriLens_user');
+  const cachedTime = localStorage.getItem('nutriLens_time');
+  if (cachedUser && cachedTime) {
+    const now = new Date().getTime();
+    if (now - parseInt(cachedTime) < 604800000) { // 7 天
+      currentUser = JSON.parse(cachedUser);
+      // Wait for DOM to finish loading to call initDashboard by putting it in setTimeout
+      setTimeout(initDashboard, 0); 
+    } else {
+      localStorage.removeItem('nutriLens_user');
+      localStorage.removeItem('nutriLens_time');
+    }
+  }
+
+  // --- 1. 登入/註冊/忘記密碼切換 ---
   document.getElementById('go-to-register').addEventListener('click', (e) => {
     e.preventDefault();
     document.getElementById('login-form').classList.add('hidden');
+    document.getElementById('forgot-form').classList.add('hidden');
     document.getElementById('register-form').classList.remove('hidden');
   });
 
   document.getElementById('go-to-login').addEventListener('click', (e) => {
     e.preventDefault();
     document.getElementById('register-form').classList.add('hidden');
+    document.getElementById('forgot-form').classList.add('hidden');
+    document.getElementById('login-form').classList.remove('hidden');
+  });
+
+  document.getElementById('go-to-forgot').addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('login-form').classList.add('hidden');
+    document.getElementById('register-form').classList.add('hidden');
+    document.getElementById('forgot-form').classList.remove('hidden');
+  });
+
+  document.getElementById('go-to-login-from-forgot').addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('forgot-form').classList.add('hidden');
     document.getElementById('login-form').classList.remove('hidden');
   });
 
@@ -72,15 +101,17 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     showLoading('登入中...');
     
-    const email = document.getElementById('login-email').value;
+    const username = document.getElementById('login-username').value;
     const password = document.getElementById('login-password').value;
     
-    const res = await apiCall('login', { email, password });
+    const res = await apiCall('login', { username, password });
     hideLoading();
     
     if (res.success) {
       currentUser = res.user;
-      initDashboard(); // 登入成功，初始化主控台
+      localStorage.setItem('nutriLens_user', JSON.stringify(currentUser));
+      localStorage.setItem('nutriLens_time', new Date().getTime().toString());
+      initDashboard(); 
     } else {
       alert(res.message);
     }
@@ -92,6 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
     showLoading('註冊中...');
     
     const userData = {
+      username: document.getElementById('reg-username').value,
       email: document.getElementById('reg-email').value,
       password: document.getElementById('reg-password').value,
       gender: document.getElementById('reg-gender').value,
@@ -108,7 +140,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (res.success) {
       alert('註冊成功！您的 TDEE 為：' + res.user.tdee + ' kcal');
       currentUser = res.user;
-      initDashboard(); // 註冊成功，初始化主控台
+      localStorage.setItem('nutriLens_user', JSON.stringify(currentUser));
+      localStorage.setItem('nutriLens_time', new Date().getTime().toString());
+      initDashboard();
     } else {
       alert(res.message);
     }
@@ -117,17 +151,37 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- 4. 登出 (已修復畫面殘留問題) ---
   document.getElementById('btn-logout').addEventListener('click', () => {
     currentUser = null;
+    localStorage.removeItem('nutriLens_user');
+    localStorage.removeItem('nutriLens_time');
     
-    // 1. 清空表單輸入內容
     document.getElementById('login-form').reset();
     document.getElementById('register-form').reset();
+    document.getElementById('forgot-form').reset();
     
-    // 2. 強制把畫面切換回「登入表單」
     document.getElementById('register-form').classList.add('hidden');
+    document.getElementById('forgot-form').classList.add('hidden');
     document.getElementById('login-form').classList.remove('hidden');
     
-    // 3. 切換回認證畫面
     showView('auth-view');
+  });
+
+  // --- 4.5 忘記密碼 ---
+  document.getElementById('forgot-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    showLoading('發送重設信件中...');
+    
+    const email = document.getElementById('forgot-email').value;
+    const res = await apiCall('forgotPassword', { email });
+    hideLoading();
+    
+    if (res.success) {
+      alert('新密碼已成功寄發至您的信箱，請使用新密碼重新登入！');
+      document.getElementById('forgot-form').classList.add('hidden');
+      document.getElementById('login-form').classList.remove('hidden');
+      document.getElementById('forgot-form').reset();
+    } else {
+      alert(res.message);
+    }
   });
 
   // --- 5. 日期切換 ---
@@ -338,7 +392,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // ==========================================
 function initDashboard() {
   showView('dashboard-view');
-  document.getElementById('user-greeting').innerText = `Hi, ${currentUser.email.split('@')[0]} (${currentUser.plan_type})`;
+  const displayUsername = currentUser.username || currentUser.email.split('@')[0];
+  document.getElementById('user-greeting').innerText = `Hi, ${displayUsername}`;
   document.getElementById('date-selector').value = currentDate;
   
   // 視覺化處理 AI 按鈕 (如果不是 Premium)
