@@ -92,6 +92,38 @@ function showToast(message, type = 'success') {
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
 
+  // --- 0.1 主題切換 (Dark Mode) ---
+  const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+  const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+
+  if (localStorage.getItem('nutriLens_theme') === 'dark' || (!('nutriLens_theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+      if(themeToggleLightIcon) themeToggleLightIcon.classList.remove('hidden');
+  } else {
+      document.documentElement.classList.remove('dark');
+      if(themeToggleDarkIcon) themeToggleDarkIcon.classList.remove('hidden');
+  }
+
+  const themeToggleBtn = document.getElementById('theme-toggle');
+  if(themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+        themeToggleDarkIcon.classList.toggle('hidden');
+        themeToggleLightIcon.classList.toggle('hidden');
+        if (document.documentElement.classList.contains('dark')) {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('nutriLens_theme', 'light');
+        } else {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('nutriLens_theme', 'dark');
+        }
+        
+        // 切換主題後，重新渲染所有圖表以套用網格與字體顏色
+        if (typeof renderDashboardChart === 'function' && window.currentDailyStats) renderDashboardChart(window.currentDailyStats);
+        if (typeof renderWeeklyChart === 'function' && window.currentWeeklyStats) renderWeeklyChart(window.currentWeeklyStats);
+        if (typeof renderBodyStatChart === 'function' && window.currentBodyStats) renderBodyStatChart(window.currentBodyStats);
+    });
+  }
+
   // --- 0.5 檢查網址是否有重設密碼的 Token ---
   const urlParams = new URLSearchParams(window.location.search);
   const resetEmail = urlParams.get('email');
@@ -1030,6 +1062,7 @@ function initDashboard() {
 
   loadDailyData();
   loadFoodDatabase();
+  if (typeof loadBodyStats === 'function') loadBodyStats();
 }
 
 async function loadFoodDatabase() {
@@ -1088,6 +1121,10 @@ function renderWeeklyChart(weeklyStats) {
   const labels = weeklyStats.map(s => s.label);
   const netCals = weeklyStats.map(s => s.in - s.out);
 
+  const isDark = document.documentElement.classList.contains('dark');
+  Chart.defaults.color = isDark ? '#9ca3af' : '#64748b';
+  const gridColor = isDark ? '#334155' : '#f1f5f9';
+
   weeklyChartInstance = new Chart(ctxWeek.getContext('2d'), {
     type: 'bar',
     data: {
@@ -1104,7 +1141,7 @@ function renderWeeklyChart(weeklyStats) {
       maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
-        y: { beginAtZero: true, grid: { color: '#f1f5f9', borderDash: [4, 4] }, border: { display: false } },
+        y: { beginAtZero: true, grid: { color: gridColor, borderDash: [4, 4] }, border: { display: false } },
         x: { grid: { display: false }, border: { display: false } }
       }
     }
@@ -1212,13 +1249,16 @@ function updateDashboardUI(stats) {
   const ctxMacro = document.getElementById('macroChart');
   if (ctxMacro) {
     if (macrosChartInstance) macrosChartInstance.destroy();
+    const isDark = document.documentElement.classList.contains('dark');
+    Chart.defaults.color = isDark ? '#9ca3af' : '#64748b';
+
     macrosChartInstance = new Chart(ctxMacro.getContext('2d'), {
       type: 'doughnut',
       data: {
         labels: ['蛋白質', '碳水', '脂肪'],
         datasets: [{
           data: totalMacros === 0 ? [1, 1, 1] : [stats.protein, stats.carbs, stats.fat],
-          backgroundColor: totalMacros === 0 ? ['#f1f5f9', '#f1f5f9', '#f1f5f9'] : ['#3b82f6', '#f59e0b', '#f43f5e'],
+          backgroundColor: totalMacros === 0 ? (isDark ? ['#334155', '#334155', '#334155'] : ['#f1f5f9', '#f1f5f9', '#f1f5f9']) : ['#3b82f6', '#f59e0b', '#f43f5e'],
           borderWidth: 0,
           cutout: '75%'
         }]
@@ -1390,3 +1430,189 @@ async function analyzeWithGemini(base64Data) {
   document.getElementById('ai-image-preview').classList.add('hidden');
   document.getElementById('ai-preview-container').classList.remove('hidden');
 }
+
+// ==========================================
+// 8. 體態趨勢追蹤 (BodyStats)
+// ==========================================
+window.bodyStatChartInstance = null;
+window.currentBodyStats = null;
+
+async function loadBodyStats() {
+  const res = await apiCall('getBodyStats', { userId: currentUser.user_id, days: 30 });
+  if (res.success) {
+     window.currentBodyStats = res.stats;
+     renderBodyStatChart(window.currentBodyStats);
+  }
+}
+
+window.renderBodyStatChart = function(stats) {
+  const ctx = document.getElementById('body-stat-chart');
+  if (!ctx || !stats || stats.length === 0) return;
+
+  if (window.bodyStatChartInstance) window.bodyStatChartInstance.destroy();
+
+  const labels = stats.map(s => s.date.substring(5)); // MM-DD
+  const weights = stats.map(s => s.weight);
+  const fats = stats.map(s => s.body_fat);
+
+  const isDark = document.documentElement.classList.contains('dark');
+  Chart.defaults.color = isDark ? '#9ca3af' : '#64748b';
+  const gridColor = isDark ? '#334155' : '#f1f5f9';
+
+  window.bodyStatChartInstance = new Chart(ctx.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: '體重 (kg)',
+          data: weights,
+          borderColor: '#6366f1',
+          backgroundColor: '#6366f1',
+          yAxisID: 'y',
+          tension: 0.3,
+          borderWidth: 2,
+          pointRadius: 4
+        },
+        {
+          label: '體脂 (%)',
+          data: fats,
+          borderColor: '#f43f5e',
+          backgroundColor: '#f43f5e',
+          yAxisID: 'y1',
+          tension: 0.3,
+          borderWidth: 2,
+          pointRadius: 4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+         legend: { position: 'top', labels: { boxWidth: 10, font: { size: 10 } } }
+      },
+      scales: {
+        x: { grid: { display: false }, border: { display: false } },
+        y: {
+          type: 'linear', display: true, position: 'left',
+          title: { display: true, text: '體重', font: { size: 10 } },
+          grid: { color: gridColor, borderDash: [4, 4] }, border: { display: false }
+        },
+        y1: {
+          type: 'linear', display: true, position: 'right',
+          title: { display: true, text: '體脂', font: { size: 10 } },
+          grid: { display: false }, border: { display: false }
+        }
+      }
+    }
+  });
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('btn-open-bodystat').addEventListener('click', () => {
+        document.getElementById('bodystat-modal').classList.remove('hidden');
+    });
+
+    document.getElementById('btn-close-bodystat').addEventListener('click', () => {
+        document.getElementById('bodystat-modal').classList.add('hidden');
+    });
+
+    document.getElementById('bodystat-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const weight = document.getElementById('bodystat-weight').value;
+        const fat = document.getElementById('bodystat-fat').value;
+        
+        showLoading('儲存體態中...');
+        const res = await apiCall('addBodyStat', {
+            userId: currentUser.user_id,
+            date: currentDate,
+            weight: Number(weight),
+            bodyFat: Number(fat)
+        });
+        hideLoading();
+
+        if (res.success) {
+            showToast('體態紀錄成功！', 'success');
+            document.getElementById('bodystat-modal').classList.add('hidden');
+            await loadBodyStats();
+        } else {
+            showToast(res.message, 'error');
+        }
+    });
+
+    // ==========================================
+    // 9. 條碼掃描辨識 (Open Food Facts API)
+    // ==========================================
+    const html5QrCode = new Html5Qrcode("qr-reader");
+
+    document.getElementById('btn-open-scanner').addEventListener('click', () => {
+        document.getElementById('scanner-modal').classList.remove('hidden');
+        html5QrCode.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 250, height: 150 } },
+            (decodedText) => {
+                html5QrCode.stop().then(() => {
+                    document.getElementById('scanner-modal').classList.add('hidden');
+                    fetchOpenFoodFacts(decodedText);
+                });
+            },
+            (errorMessage) => {}
+        ).catch(err => {
+            showToast('無法開啟相機權限: ' + err, 'error');
+            document.getElementById('scanner-modal').classList.add('hidden');
+        });
+    });
+
+    document.getElementById('btn-close-scanner').addEventListener('click', () => {
+        html5QrCode.stop().then(() => {
+            document.getElementById('scanner-modal').classList.add('hidden');
+        }).catch(() => {
+            document.getElementById('scanner-modal').classList.add('hidden');
+        });
+    });
+
+    async function fetchOpenFoodFacts(barcode) {
+        showLoading('查詢條碼中...');
+        try {
+            const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`);
+            const data = await response.json();
+            hideLoading();
+            
+            if (data.status === 1 && data.product) {
+                const nut = data.product.nutriments || {};
+                const foodName = data.product.product_name || '條碼辨識食品';
+                // 盡量以 100g 回寫份量，讓使用者自己調整 grams
+                const cals = nut['energy-kcal_100g'] || 0;
+                const pro = nut['proteins_100g'] || 0;
+                const car = nut['carbohydrates_100g'] || 0;
+                const fat = nut['fat_100g'] || 0;
+
+                // 切換至自訂輸入模式
+                document.getElementById('food-select-container').classList.add('hidden');
+                document.getElementById('custom-food-container').classList.remove('hidden');
+
+                document.getElementById('diet-name').value = foodName;
+                document.getElementById('diet-amount-input').value = 1;
+                document.getElementById('diet-unit-label').innerText = '100克';
+
+                document.getElementById('diet-cals').value = cals;
+                document.getElementById('diet-pro').value = pro;
+                document.getElementById('diet-carb').value = car;
+                document.getElementById('diet-fat').value = fat;
+
+                document.getElementById('diet-cals').readOnly = false;
+                document.getElementById('diet-pro').readOnly = false;
+                document.getElementById('diet-carb').readOnly = false;
+                document.getElementById('diet-fat').readOnly = false;
+                
+                showToast(`掃描成功！已帶入 ${foodName} 營養資訊`, 'success');
+            } else {
+                showToast('雲端資料庫查無此食品，請手動輸入', 'error');
+            }
+        } catch (e) {
+            hideLoading();
+            showToast('條碼查詢服務連線失敗', 'error');
+        }
+    }
+});

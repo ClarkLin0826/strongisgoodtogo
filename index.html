@@ -5,6 +5,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NutriLens - 熱量與營養素追蹤</title>
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -16,7 +24,7 @@
   <style>
     body {
       font-family: 'Inter', sans-serif;
-      background-color: #f8fafc;
+      
     }
 
     .hidden {
@@ -45,55 +53,55 @@
   </style>
 </head>
 
-<body class="text-slate-800">
+<body class="text-slate-800 dark:text-gray-100">
 
   <div id="loading-overlay" class="fixed inset-0 bg-slate-900/50 z-50 flex flex-col items-center justify-center hidden">
     <div class="loader mb-4"></div>
     <p id="loading-text" class="text-white font-medium">處理中...</p>
   </div>
 
-  <div id="app" class="max-w-md mx-auto min-h-screen bg-white shadow-xl relative overflow-hidden">
+  <div id="app" class="max-w-md mx-auto min-h-screen bg-white dark:bg-slate-800 shadow-xl relative overflow-hidden">
 
     <div id="auth-view" class="p-6 h-screen flex flex-col justify-center">
       <div class="text-center mb-8">
         <h1 class="text-3xl font-black text-indigo-600 mb-2">NutriLens</h1>
-        <p class="text-slate-500 text-sm">您的智能熱量與營養素管家</p>
+        <p class="text-slate-500 dark:text-gray-400 text-sm">您的智能熱量與營養素管家</p>
       </div>
 
       <form id="login-form" class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">帳號 (Username)</label>
+          <label class="block text-sm font-medium text-slate-700 dark:text-gray-200 mb-1">帳號 (Username)</label>
           <input type="text" id="login-username" required
-            class="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
+            class="w-full px-4 py-2 border border-slate-300 dark:border-slate-500 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">密碼</label>
+          <label class="block text-sm font-medium text-slate-700 dark:text-gray-200 mb-1">密碼</label>
           <input type="password" id="login-password" required
-            class="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
+            class="w-full px-4 py-2 border border-slate-300 dark:border-slate-500 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
           <div class="text-right mt-1">
             <a href="#" id="go-to-forgot" class="text-xs text-indigo-500 hover:underline">忘記密碼？</a>
           </div>
         </div>
         <button type="submit"
           class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition">登入</button>
-        <p class="text-center text-sm text-slate-500 mt-4">
+        <p class="text-center text-sm text-slate-500 dark:text-gray-400 mt-4">
           還沒有帳號？ <a href="#" id="go-to-register" class="text-indigo-600 font-medium hover:underline">立即註冊</a>
         </p>
       </form>
 
       <form id="forgot-form" class="space-y-4 hidden">
         <div class="text-center mb-4">
-          <h2 class="text-xl font-bold text-slate-800">重設密碼</h2>
-          <p class="text-xs text-slate-500 mt-1">請輸入您註冊時的 Email，我們將寄發新密碼信件給您。</p>
+          <h2 class="text-xl font-bold text-slate-800 dark:text-gray-100">重設密碼</h2>
+          <p class="text-xs text-slate-500 dark:text-gray-400 mt-1">請輸入您註冊時的 Email，我們將寄發新密碼信件給您。</p>
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">註冊 Email</label>
+          <label class="block text-sm font-medium text-slate-700 dark:text-gray-200 mb-1">註冊 Email</label>
           <input type="email" id="forgot-email" required
-            class="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
+            class="w-full px-4 py-2 border border-slate-300 dark:border-slate-500 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
         <button type="submit"
           class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition">發送重設信件</button>
-        <p class="text-center text-sm text-slate-500 mt-4">
+        <p class="text-center text-sm text-slate-500 dark:text-gray-400 mt-4">
           <a href="#" id="go-to-login-from-forgot" class="text-indigo-600 font-medium hover:underline">返回登入</a>
         </p>
       </form>
@@ -101,15 +109,15 @@
       <!-- 重設密碼 (透過連結) -->
       <form id="reset-new-password-form" class="space-y-4 hidden">
         <div class="text-center mb-4">
-          <h2 class="text-xl font-bold text-slate-800">設定新密碼</h2>
-          <p class="text-xs text-slate-500 mt-1">請輸入您的新密碼以完成重設。</p>
+          <h2 class="text-xl font-bold text-slate-800 dark:text-gray-100">設定新密碼</h2>
+          <p class="text-xs text-slate-500 dark:text-gray-400 mt-1">請輸入您的新密碼以完成重設。</p>
         </div>
         <input type="hidden" id="reset-token-email">
         <input type="hidden" id="reset-token-temp">
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">新密碼</label>
+          <label class="block text-sm font-medium text-slate-700 dark:text-gray-200 mb-1">新密碼</label>
           <input type="password" id="reset-new-password" required
-            class="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
+            class="w-full px-4 py-2 border border-slate-300 dark:border-slate-500 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
         <button type="submit"
           class="w-full bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-700 transition">更新密碼</button>
@@ -118,45 +126,45 @@
       <form id="register-form" class="space-y-4 hidden max-h-[85vh] overflow-y-auto overflow-x-hidden p-1">
         <div class="grid grid-cols-2 gap-4">
           <div class="col-span-2">
-            <label class="block text-sm font-medium text-slate-700 mb-1">自訂帳號 (Username)</label>
+            <label class="block text-sm font-medium text-slate-700 dark:text-gray-200 mb-1">自訂帳號 (Username)</label>
             <input type="text" id="reg-username" required
-              class="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none">
+              class="w-full px-4 py-2 border border-slate-300 dark:border-slate-500 rounded-lg outline-none">
           </div>
           <div class="col-span-2">
-            <label class="block text-sm font-medium text-slate-700 mb-1">聯絡 Email (用於忘記密碼)</label>
+            <label class="block text-sm font-medium text-slate-700 dark:text-gray-200 mb-1">聯絡 Email (用於忘記密碼)</label>
             <input type="email" id="reg-email" required
-              class="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none">
+              class="w-full px-4 py-2 border border-slate-300 dark:border-slate-500 rounded-lg outline-none">
           </div>
           <div class="col-span-2">
-            <label class="block text-sm font-medium text-slate-700 mb-1">密碼</label>
+            <label class="block text-sm font-medium text-slate-700 dark:text-gray-200 mb-1">密碼</label>
             <input type="password" id="reg-password" required
-              class="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none">
+              class="w-full px-4 py-2 border border-slate-300 dark:border-slate-500 rounded-lg outline-none">
           </div>
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">性別</label>
-            <select id="reg-gender" class="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none">
+            <label class="block text-sm font-medium text-slate-700 dark:text-gray-200 mb-1">性別</label>
+            <select id="reg-gender" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-500 rounded-lg outline-none">
               <option value="male">男性</option>
               <option value="female">女性</option>
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">年齡</label>
+            <label class="block text-sm font-medium text-slate-700 dark:text-gray-200 mb-1">年齡</label>
             <input type="number" id="reg-age" required min="10" max="120"
-              class="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none">
+              class="w-full px-4 py-2 border border-slate-300 dark:border-slate-500 rounded-lg outline-none">
           </div>
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">身高 (cm)</label>
+            <label class="block text-sm font-medium text-slate-700 dark:text-gray-200 mb-1">身高 (cm)</label>
             <input type="number" id="reg-height" required min="100" max="250"
-              class="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none">
+              class="w-full px-4 py-2 border border-slate-300 dark:border-slate-500 rounded-lg outline-none">
           </div>
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">體重 (kg)</label>
+            <label class="block text-sm font-medium text-slate-700 dark:text-gray-200 mb-1">體重 (kg)</label>
             <input type="number" id="reg-weight" required min="30" max="200"
-              class="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none">
+              class="w-full px-4 py-2 border border-slate-300 dark:border-slate-500 rounded-lg outline-none">
           </div>
           <div class="col-span-2">
-            <label class="block text-sm font-medium text-slate-700 mb-1">活動量</label>
-            <select id="reg-activity" class="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none">
+            <label class="block text-sm font-medium text-slate-700 dark:text-gray-200 mb-1">活動量</label>
+            <select id="reg-activity" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-500 rounded-lg outline-none">
               <option value="1.2">久坐 (幾乎不運動)</option>
               <option value="1.375">輕度活動 (每週運動 1-3 天)</option>
               <option value="1.55">中度活動 (每週運動 3-5 天)</option>
@@ -164,9 +172,9 @@
             </select>
           </div>
           <div class="col-span-2">
-            <label class="block text-sm font-medium text-slate-700 mb-1">帳號方案 (鎖定中)</label>
+            <label class="block text-sm font-medium text-slate-700 dark:text-gray-200 mb-1">帳號方案 (鎖定中)</label>
             <select id="reg-plan"
-              class="w-full px-4 py-2 border border-slate-300 rounded-lg bg-slate-100 text-slate-400 font-medium cursor-not-allowed"
+              class="w-full px-4 py-2 border border-slate-300 dark:border-slate-500 rounded-lg bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-gray-500 font-medium cursor-not-allowed"
               disabled>
               <option value="Free" selected>Free (免費版)</option>
               <option value="Premium">Premium (進階版，需開通)</option>
@@ -176,60 +184,60 @@
         <button type="submit"
           class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition mt-4">註冊並計算
           TDEE</button>
-        <p class="text-center text-sm text-slate-500 mt-4">
+        <p class="text-center text-sm text-slate-500 dark:text-gray-400 mt-4">
           已有帳號？ <a href="#" id="go-to-login" class="text-indigo-600 font-medium hover:underline">返回登入</a>
         </p>
       </form>
     </div>
 
-    <div id="dashboard-view" class="hidden flex flex-col h-screen bg-slate-50">
-      <header class="bg-white p-4 border-b border-slate-200 flex justify-between items-center sticky top-0 z-10">
+    <div id="dashboard-view" class="hidden flex flex-col h-screen bg-slate-50 dark:bg-slate-900">
+      <header class="bg-white dark:bg-slate-800 p-4 border-b border-slate-200 dark:border-slate-600 flex justify-between items-center sticky top-0 z-10">
         <div>
           <h2 class="text-xl font-black text-indigo-600">NutriLens</h2>
           <div class="flex items-center gap-1 mt-0.5">
-            <p id="user-greeting" class="text-xs text-slate-500 font-medium">Hi, User</p>
+            <p id="user-greeting" class="text-xs text-slate-500 dark:text-gray-400 font-medium">Hi, User</p>
             <button id="btn-edit-profile" class="text-indigo-400 hover:text-indigo-600 cursor-pointer ml-1 text-xs">📝
               編輯資料</button>
           </div>
         </div>
         <div class="flex items-center gap-2">
           <input type="date" id="date-selector"
-            class="text-xs border border-slate-300 rounded px-1 py-1 outline-none w-28">
+            class="text-xs border border-slate-300 dark:border-slate-500 rounded px-1 py-1 outline-none w-28">
           <button id="btn-goal-settings"
             class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded hover:bg-emerald-100 transition whitespace-nowrap">⚙️
             目標</button>
-          <button id="btn-logout" class="text-xs text-slate-400 hover:text-slate-600 whitespace-nowrap">登出</button>
+          <button id="btn-logout" class="text-xs text-slate-400 dark:text-gray-500 hover:text-slate-600 whitespace-nowrap">登出</button>
         </div>
       </header>
 
       <main class="flex-1 overflow-y-auto p-4 pb-24 space-y-6">
 
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700">
           <div class="flex justify-between items-end mb-4">
             <div>
-              <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">剩餘熱量</p>
-              <p class="text-4xl font-black text-slate-800"><span id="cals-remaining">0</span> <span
-                  class="text-base font-medium text-slate-400">kcal</span></p>
-              <p class="text-[11px] text-slate-400 mt-1">🔥 每日 TDEE: <strong id="cals-tdee">0</strong> kcal</p>
+              <p class="text-xs font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider mb-1">剩餘熱量</p>
+              <p class="text-4xl font-black text-slate-800 dark:text-gray-100"><span id="cals-remaining">0</span> <span
+                  class="text-base font-medium text-slate-400 dark:text-gray-500">kcal</span></p>
+              <p class="text-[11px] text-slate-400 dark:text-gray-500 mt-1">🔥 每日 TDEE: <strong id="cals-tdee">0</strong> kcal</p>
             </div>
             <div class="text-right">
-              <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">目標吃滿</p>
+              <p class="text-xs font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider mb-1">目標吃滿</p>
               <p class="text-lg font-bold text-indigo-600" id="cals-target">0</p>
             </div>
           </div>
 
-          <div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden mb-4">
+          <div class="h-3 w-full bg-slate-100 dark:bg-slate-800/50 rounded-full overflow-hidden mb-4">
             <div id="cals-progress" class="h-full bg-indigo-500 transition-all duration-500" style="width: 0%"></div>
           </div>
 
           <div class="flex justify-between text-sm">
             <div class="flex items-center gap-2">
               <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
-              <span class="text-slate-500">攝取: <strong class="text-slate-800" id="cals-in">0</strong></span>
+              <span class="text-slate-500 dark:text-gray-400">攝取: <strong class="text-slate-800 dark:text-gray-100" id="cals-in">0</strong></span>
             </div>
             <div class="flex items-center gap-2">
               <div class="w-2 h-2 rounded-full bg-orange-400"></div>
-              <span class="text-slate-500">消耗: <strong class="text-slate-800" id="cals-out">0</strong></span>
+              <span class="text-slate-500 dark:text-gray-400">消耗: <strong class="text-slate-800 dark:text-gray-100" id="cals-out">0</strong></span>
             </div>
           </div>
         </div>
@@ -249,72 +257,72 @@
             </div>
           </div>
           <div class="bg-white/60 p-2 rounded-lg mt-3 flex justify-between items-center">
-            <p class="text-xs font-medium text-slate-600">💪 今日實際達標：<strong class="text-emerald-600"
+            <p class="text-xs font-medium text-slate-600 dark:text-gray-300">💪 今日實際達標：<strong class="text-emerald-600"
                 id="goal-today-achieved">0</strong> kcal</p>
-            <p class="text-xs font-medium text-slate-600">剩餘總缺口：<strong class="text-rose-500"
+            <p class="text-xs font-medium text-slate-600 dark:text-gray-300">剩餘總缺口：<strong class="text-rose-500"
                 id="goal-total-remaining">38500</strong></p>
           </div>
         </div>
 
-        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center gap-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-4">
           <div class="w-[45%] relative flex justify-center items-center">
             <canvas id="macroChart" class="w-full max-w-[120px] max-h-[120px]"></canvas>
             <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">總計</span>
-              <span id="macro-total" class="text-xs font-black text-slate-700">0g</span>
+              <span class="text-[9px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-wider">總計</span>
+              <span id="macro-total" class="text-xs font-black text-slate-700 dark:text-gray-200">0g</span>
             </div>
           </div>
           <div class="w-[55%] space-y-3">
             <div>
               <div class="flex justify-between items-end mb-1">
-                <p class="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1"><span
+                <p class="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase flex items-center gap-1"><span
                     class="w-2 h-2 rounded-full bg-blue-500"></span>蛋白質 (P)</p>
                 <p class="text-xs font-bold text-blue-600"><span id="macro-protein">0</span>g</p>
               </div>
-              <div class="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100">
+              <div class="h-1.5 w-full bg-slate-50 dark:bg-slate-900 rounded-full overflow-hidden border border-slate-100 dark:border-slate-700">
                 <div id="bar-protein" class="h-full bg-blue-500 transition-all duration-500" style="width: 0%"></div>
               </div>
             </div>
             <div>
               <div class="flex justify-between items-end mb-1">
-                <p class="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1"><span
+                <p class="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase flex items-center gap-1"><span
                     class="w-2 h-2 rounded-full bg-amber-500"></span>碳水 (C)</p>
                 <p class="text-xs font-bold text-amber-600"><span id="macro-carbs">0</span>g</p>
               </div>
-              <div class="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100">
+              <div class="h-1.5 w-full bg-slate-50 dark:bg-slate-900 rounded-full overflow-hidden border border-slate-100 dark:border-slate-700">
                 <div id="bar-carbs" class="h-full bg-amber-500 transition-all duration-500" style="width: 0%"></div>
               </div>
             </div>
             <div>
               <div class="flex justify-between items-end mb-1">
-                <p class="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1"><span
+                <p class="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase flex items-center gap-1"><span
                     class="w-2 h-2 rounded-full bg-rose-500"></span>脂肪 (F)</p>
                 <p class="text-xs font-bold text-rose-600"><span id="macro-fat">0</span>g</p>
               </div>
-              <div class="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100">
+              <div class="h-1.5 w-full bg-slate-50 dark:bg-slate-900 rounded-full overflow-hidden border border-slate-100 dark:border-slate-700">
                 <div id="bar-fat" class="h-full bg-rose-500 transition-all duration-500" style="width: 0%"></div>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-          <h3 class="font-bold text-slate-800 text-sm mb-3">📈 近七日淨熱量趨勢</h3>
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-700">
+          <h3 class="font-bold text-slate-800 dark:text-gray-100 text-sm mb-3">📈 近七日淨熱量趨勢</h3>
           <div class="w-full h-40">
             <canvas id="weeklyChart"></canvas>
           </div>
         </div>
 
         <div>
-          <h3 class="font-bold text-slate-800 mb-3">今日紀錄</h3>
+          <h3 class="font-bold text-slate-800 dark:text-gray-100 mb-3">今日紀錄</h3>
           <div id="logs-container" class="space-y-3">
-            <p class="text-sm text-slate-400 text-center py-4">尚無紀錄，點擊下方按鈕新增！</p>
+            <p class="text-sm text-slate-400 dark:text-gray-500 text-center py-4">尚無紀錄，點擊下方按鈕新增！</p>
           </div>
         </div>
       </main>
 
       <!-- 底部動作 -->
-      <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 max-w-sm mx-auto z-40">
+      <div class="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-600 p-4 max-w-sm mx-auto z-40">
         <div class="grid grid-cols-3 gap-2">
           <button id="btn-open-diet"
             class="col-span-1 bg-indigo-600 text-white font-bold py-3 rounded-xl shadow text-sm truncate hover:bg-indigo-700 transition">+
@@ -331,17 +339,17 @@
 
     <!-- 目標設定 Modal -->
     <div id="goal-modal" class="fixed inset-0 bg-slate-900/50 z-50 hidden flex flex-col justify-end">
-      <div class="bg-white rounded-t-3xl p-6 transform transition-transform">
+      <div class="bg-white dark:bg-slate-800 rounded-t-3xl p-6 transform transition-transform">
         <div class="flex justify-between items-center mb-6">
-          <h2 class="text-xl font-bold text-slate-800">⚙️ 變更目標</h2>
-          <button id="btn-close-goal" class="text-slate-400 hover:text-slate-600">✕</button>
+          <h2 class="text-xl font-bold text-slate-800 dark:text-gray-100">⚙️ 變更目標</h2>
+          <button id="btn-close-goal" class="text-slate-400 dark:text-gray-500 hover:text-slate-600">✕</button>
         </div>
 
         <form id="goal-setting-form" class="space-y-4">
           <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">目標模式</label>
+            <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">目標模式</label>
             <select id="goal-mode" required
-              class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:border-indigo-500">
+              class="w-full px-3 py-2 border border-slate-300 dark:border-slate-500 rounded-lg text-sm outline-none focus:border-indigo-500">
               <option value="maintain">維持體重</option>
               <option value="lose">減脂</option>
               <option value="gain">增肌</option>
@@ -350,16 +358,16 @@
 
           <div id="goal-details-container" class="grid grid-cols-2 gap-4 hidden mt-4 pl-4 border-l-2 border-indigo-200">
             <div>
-              <label class="block text-xs font-medium text-slate-500 mb-1">目標變化 (kg)</label>
+              <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">目標變化 (kg)</label>
               <input type="number" id="goal-kg" step="0.1" placeholder="例如：5"
-                class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:border-indigo-500 text-right">
+                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-500 rounded-lg text-sm outline-none focus:border-indigo-500 text-right">
             </div>
             <div>
-              <label class="block text-xs font-medium text-slate-500 mb-1">預計花費時間 (個月)</label>
+              <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">預計花費時間 (個月)</label>
               <input type="number" id="goal-months" step="0.1" placeholder="例如：3"
-                class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:border-indigo-500 text-right">
+                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-500 rounded-lg text-sm outline-none focus:border-indigo-500 text-right">
             </div>
-            <p class="col-span-2 text-[11px] text-slate-400">系統將依據 1公斤變化≈7700大卡 替您精算每天的熱量缺口(增肌為盈餘)與配比。</p>
+            <p class="col-span-2 text-[11px] text-slate-400 dark:text-gray-500">系統將依據 1公斤變化≈7700大卡 替您精算每天的熱量缺口(增肌為盈餘)與配比。</p>
           </div>
 
           <button type="submit"
@@ -370,41 +378,41 @@
 
     <!-- 用戶資料編輯 Modal -->
     <div id="profile-modal" class="fixed inset-0 bg-slate-900/50 z-50 hidden flex flex-col justify-end">
-      <div class="bg-white rounded-t-3xl p-6 transform transition-transform">
+      <div class="bg-white dark:bg-slate-800 rounded-t-3xl p-6 transform transition-transform">
         <div class="flex justify-between items-center mb-6">
-          <h2 class="text-xl font-bold text-slate-800">👤 編輯個人資料</h2>
-          <button id="btn-close-profile" class="text-slate-400 hover:text-slate-600">✕</button>
+          <h2 class="text-xl font-bold text-slate-800 dark:text-gray-100">👤 編輯個人資料</h2>
+          <button id="btn-close-profile" class="text-slate-400 dark:text-gray-500 hover:text-slate-600">✕</button>
         </div>
 
         <form id="edit-profile-form" class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-medium text-slate-500 mb-1">年齡 (歲)</label>
+              <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">年齡 (歲)</label>
               <input type="number" id="edit-age" required min="10" max="120"
-                class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none">
+                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-500 rounded-lg text-sm outline-none">
             </div>
             <div>
-              <label class="block text-xs font-medium text-slate-500 mb-1">性別</label>
+              <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">性別</label>
               <select id="edit-gender" required
-                class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none">
+                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-500 rounded-lg text-sm outline-none">
                 <option value="male">男性</option>
                 <option value="female">女性</option>
               </select>
             </div>
             <div>
-              <label class="block text-xs font-medium text-slate-500 mb-1">身高 (cm)</label>
+              <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">身高 (cm)</label>
               <input type="number" id="edit-height" required min="100" max="250"
-                class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none">
+                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-500 rounded-lg text-sm outline-none">
             </div>
             <div>
-              <label class="block text-xs font-medium text-slate-500 mb-1">體重 (kg)</label>
+              <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">體重 (kg)</label>
               <input type="number" id="edit-weight" required min="30" max="200" step="0.1"
-                class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none">
+                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-500 rounded-lg text-sm outline-none">
             </div>
             <div class="col-span-2">
-              <label class="block text-xs font-medium text-slate-500 mb-1">活動量</label>
+              <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">活動量</label>
               <select id="edit-activity"
-                class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none">
+                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-500 rounded-lg text-sm outline-none">
                 <option value="1.2">久坐 (幾乎不運動)</option>
                 <option value="1.375">輕度活動 (每週運動 1-3 天)</option>
                 <option value="1.55">中度活動 (每週運動 3-5 天)</option>
@@ -420,17 +428,17 @@
     </div>
 
     <div id="diet-modal" class="fixed inset-0 bg-slate-900/50 z-50 hidden flex flex-col justify-end">
-      <div class="bg-white rounded-t-3xl p-6">
+      <div class="bg-white dark:bg-slate-800 rounded-t-3xl p-6">
         <div class="flex justify-between items-center mb-4">
-          <h3 class="text-lg font-bold text-slate-800">新增飲食紀錄</h3>
+          <h3 class="text-lg font-bold text-slate-800 dark:text-gray-100">新增飲食紀錄</h3>
           <button type="button" id="btn-close-diet"
-            class="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
+            class="text-slate-400 dark:text-gray-500 hover:text-slate-600 text-2xl">&times;</button>
         </div>
         <form id="add-diet-form" class="space-y-4 max-h-[70vh] overflow-y-auto pr-2 pb-4">
           <div class="grid grid-cols-2 gap-4">
             <div class="col-span-2">
-              <label class="block text-xs font-medium text-slate-500 mb-1">餐別</label>
-              <select id="diet-meal" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none">
+              <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">餐別</label>
+              <select id="diet-meal" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-500 rounded-lg text-sm outline-none">
                 <option value="Breakfast">早餐</option>
                 <option value="Lunch">午餐</option>
                 <option value="Dinner">晚餐</option>
@@ -439,74 +447,80 @@
             </div>
 
             <div class="col-span-2 relative">
-              <label class="block text-xs font-medium text-slate-500 mb-1">🔍 關鍵字搜尋 (找食物最快)</label>
+              <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1 flex justify-between items-center">
+                <span>🔍 關鍵字搜尋 (找食物最快)</span>
+                <button type="button" id="btn-open-scanner" class="text-indigo-600 dark:text-indigo-400 flex items-center gap-1 font-bold hover:opacity-80">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+                  掃描條碼
+                </button>
+              </label>
               <input type="text" id="diet-global-search" placeholder="輸入食物名稱 (例如: 雞排)..." autocomplete="off"
-                class="w-full px-3 py-2 border border-indigo-300 bg-indigo-50/30 rounded-lg text-sm outline-none focus:border-indigo-500 transition-colors">
+                class="w-full px-3 py-2 border border-indigo-300 dark:border-indigo-500 bg-indigo-50/30 dark:bg-slate-900 rounded-lg text-sm outline-none focus:border-indigo-500 transition-colors">
               <div id="diet-search-results"
-                class="absolute z-20 w-full bg-white border border-slate-200 mt-1 rounded-lg shadow-xl max-h-60 overflow-y-auto hidden">
+                class="absolute z-20 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 mt-1 rounded-lg shadow-xl max-h-60 overflow-y-auto hidden">
                 <!-- Autocomplete items appended here -->
               </div>
             </div>
 
             <div class="col-span-2 flex items-center gap-2 my-1">
-              <hr class="flex-1 border-slate-200">
-              <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">或依大分類選擇</span>
-              <hr class="flex-1 border-slate-200">
+              <hr class="flex-1 border-slate-200 dark:border-slate-600">
+              <span class="text-[10px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-wider">或依大分類選擇</span>
+              <hr class="flex-1 border-slate-200 dark:border-slate-600">
             </div>
 
             <div class="col-span-2" id="food-select-container">
-              <label class="block text-xs font-medium text-slate-500 mb-1">大分類</label>
+              <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">大分類</label>
               <select id="diet-category"
-                class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none mb-3">
+                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-500 rounded-lg text-sm outline-none mb-3">
                 <option value="" disabled selected>載入資料庫中...</option>
               </select>
 
               <div id="food-dropdown-wrapper">
-                <label class="block text-xs font-medium text-slate-500 mb-1">食物名稱</label>
+                <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">食物名稱</label>
                 <select id="diet-food" disabled
-                  class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none">
+                  class="w-full px-3 py-2 border border-slate-300 dark:border-slate-500 rounded-lg text-sm outline-none">
                   <option value="" disabled selected>請先選擇大分類...</option>
                 </select>
               </div>
             </div>
 
             <div class="col-span-2 hidden" id="custom-food-container">
-              <label class="block text-xs font-medium text-slate-500 mb-1">食物名稱 (手動輸入)</label>
+              <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">食物名稱 (手動輸入)</label>
               <input type="text" id="diet-name"
-                class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none">
+                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-500 rounded-lg text-sm outline-none">
             </div>
 
             <div class="col-span-2">
-              <label class="block text-xs font-medium text-slate-500 mb-1">輸入份量</label>
+              <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">輸入份量</label>
               <div class="flex items-center gap-2 w-full">
                 <input type="number" id="diet-amount-input" step="0.1" required
-                  class="flex-1 min-w-0 px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none text-right placeholder-slate-300"
+                  class="flex-1 min-w-0 px-3 py-2 border border-slate-300 dark:border-slate-500 rounded-lg text-sm outline-none text-right placeholder-slate-300"
                   placeholder="0">
                 <span id="diet-unit-label"
-                  class="text-xs font-medium text-slate-500 w-[60px] shrink-0 leading-tight break-words whitespace-normal">-</span>
+                  class="text-xs font-medium text-slate-500 dark:text-gray-400 w-[60px] shrink-0 leading-tight break-words whitespace-normal">-</span>
               </div>
               <input type="hidden" id="diet-amount">
             </div>
 
             <div>
-              <label class="block text-xs font-medium text-slate-500 mb-1">熱量 (kcal)</label>
+              <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">熱量 (kcal)</label>
               <input type="number" id="diet-cals" required readonly
-                class="w-full px-3 py-2 border border-slate-200 bg-slate-50 text-slate-500 rounded-lg text-sm outline-none transition-colors">
+                class="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-gray-400 rounded-lg text-sm outline-none transition-colors">
             </div>
             <div>
-              <label class="block text-xs font-medium text-slate-500 mb-1">蛋白質 (g)</label>
+              <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">蛋白質 (g)</label>
               <input type="number" id="diet-pro" required readonly
-                class="w-full px-3 py-2 border border-slate-200 bg-slate-50 text-slate-500 rounded-lg text-sm outline-none transition-colors">
+                class="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-gray-400 rounded-lg text-sm outline-none transition-colors">
             </div>
             <div>
-              <label class="block text-xs font-medium text-slate-500 mb-1">碳水 (g)</label>
+              <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">碳水 (g)</label>
               <input type="number" id="diet-carb" required readonly
-                class="w-full px-3 py-2 border border-slate-200 bg-slate-50 text-slate-500 rounded-lg text-sm outline-none transition-colors">
+                class="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-gray-400 rounded-lg text-sm outline-none transition-colors">
             </div>
             <div>
-              <label class="block text-xs font-medium text-slate-500 mb-1">脂肪 (g)</label>
+              <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">脂肪 (g)</label>
               <input type="number" id="diet-fat" required readonly
-                class="w-full px-3 py-2 border border-slate-200 bg-slate-50 text-slate-500 rounded-lg text-sm outline-none transition-colors">
+                class="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-gray-400 rounded-lg text-sm outline-none transition-colors">
             </div>
           </div>
           <input type="hidden" id="diet-is-ai" value="false">
@@ -516,8 +530,8 @@
             加到這一餐</button>
 
           <!-- 購物車清單 -->
-          <div id="diet-cart-container" class="mt-4 border-t border-slate-200 pt-4 hidden">
-            <h3 class="text-xs font-bold text-slate-700 mb-2">🛒 待儲存清單 (<span id="diet-cart-count">0</span>)</h3>
+          <div id="diet-cart-container" class="mt-4 border-t border-slate-200 dark:border-slate-600 pt-4 hidden">
+            <h3 class="text-xs font-bold text-slate-700 dark:text-gray-200 mb-2">🛒 待儲存清單 (<span id="diet-cart-count">0</span>)</h3>
             <ul id="diet-cart-list" class="space-y-2 mb-4 max-h-32 overflow-y-auto">
             </ul>
             <button type="button" id="btn-submit-diet-cart"
@@ -529,28 +543,28 @@
     </div>
     <!-- 新增運動紀錄 Modal -->
     <div id="exercise-modal" class="fixed inset-0 bg-slate-900/50 z-50 hidden flex flex-col justify-end">
-      <div class="bg-white rounded-t-3xl p-6 transform transition-transform">
+      <div class="bg-white dark:bg-slate-800 rounded-t-3xl p-6 transform transition-transform">
         <div class="flex justify-between items-center mb-6">
-          <h2 class="text-xl font-bold text-slate-800">新增運動紀錄</h2>
-          <button id="btn-close-exercise" class="text-slate-400 hover:text-slate-600">✕</button>
+          <h2 class="text-xl font-bold text-slate-800 dark:text-gray-100">新增運動紀錄</h2>
+          <button id="btn-close-exercise" class="text-slate-400 dark:text-gray-500 hover:text-slate-600">✕</button>
         </div>
 
         <form id="add-exercise-form" class="space-y-4">
           <!-- 模式切換 -->
           <input type="hidden" id="exercise-mode" value="calc">
-          <div class="flex bg-slate-100 rounded-lg p-1 mb-4">
+          <div class="flex bg-slate-100 dark:bg-slate-800/50 rounded-lg p-1 mb-4">
             <button type="button" id="tab-ex-calc"
-              class="flex-1 py-1.5 text-sm font-bold rounded-md bg-white shadow-sm text-emerald-600 transition">🎯
+              class="flex-1 py-1.5 text-sm font-bold rounded-md bg-white dark:bg-slate-800 shadow-sm text-emerald-600 transition">🎯
               計算機</button>
             <button type="button" id="tab-ex-manual"
-              class="flex-1 py-1.5 text-sm font-medium rounded-md text-slate-500 hover:text-slate-800 transition">✍️
+              class="flex-1 py-1.5 text-sm font-medium rounded-md text-slate-500 dark:text-gray-400 hover:text-slate-800 transition">✍️
               自訂輸入</button>
           </div>
 
           <div id="ex-calc-container">
-            <label class="block text-xs font-medium text-slate-500 mb-1">選擇一般運動項目</label>
+            <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">選擇一般運動項目</label>
             <select id="exercise-preset"
-              class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:border-emerald-500">
+              class="w-full px-3 py-2 border border-slate-300 dark:border-slate-500 rounded-lg text-sm outline-none focus:border-emerald-500">
               <option value="" disabled selected>請選擇運動類型...</option>
               <option value="3.0">🚶‍♂️ 慢走 (4公里/小時)</option>
               <option value="5.0">🚶‍♂️ 健走 (6公里/小時)</option>
@@ -568,21 +582,21 @@
           </div>
 
           <div id="ex-manual-container" class="hidden">
-            <label class="block text-xs font-medium text-slate-500 mb-1">運動項目 (自訂名稱)</label>
+            <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">運動項目 (自訂名稱)</label>
             <input type="text" id="exercise-name" placeholder="例如：跟抄燃脂減肥操"
-              class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:border-emerald-500 mb-4">
+              class="w-full px-3 py-2 border border-slate-300 dark:border-slate-500 rounded-lg text-sm outline-none focus:border-emerald-500 mb-4">
           </div>
 
           <div class="grid grid-cols-2 gap-4 mt-4">
             <div>
-              <label class="block text-xs font-medium text-slate-500 mb-1">時間 (分鐘)</label>
+              <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">時間 (分鐘)</label>
               <input type="number" id="exercise-duration" required placeholder="例如：30"
-                class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none text-right focus:border-emerald-500">
+                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-500 rounded-lg text-sm outline-none text-right focus:border-emerald-500">
             </div>
             <div>
-              <label class="block text-xs font-medium text-slate-500 mb-1">消耗熱量 (kcal)</label>
+              <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">消耗熱量 (kcal)</label>
               <input type="number" id="exercise-cals" required readonly placeholder="自動計算"
-                class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none text-right bg-slate-50 focus:border-emerald-500 font-bold text-emerald-600">
+                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-500 rounded-lg text-sm outline-none text-right bg-slate-50 dark:bg-slate-900 focus:border-emerald-500 font-bold text-emerald-600">
             </div>
           </div>
 
@@ -593,14 +607,14 @@
     </div>
 
     <div id="ai-modal" class="fixed inset-0 bg-slate-900/50 z-50 hidden flex flex-col justify-end">
-      <div class="bg-white rounded-t-3xl p-6">
+      <div class="bg-white dark:bg-slate-800 rounded-t-3xl p-6">
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">✨ AI
             智能辨識</h3>
-          <button id="btn-close-ai" class="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
+          <button id="btn-close-ai" class="text-slate-400 dark:text-gray-500 hover:text-slate-600 text-2xl">&times;</button>
         </div>
         <div class="space-y-4 text-center">
-          <p class="text-sm text-slate-500 mb-4">✨ 拍下即刻辨識熱量與三大營養素！</p>
+          <p class="text-sm text-slate-500 dark:text-gray-400 mb-4">✨ 拍下即刻辨識熱量與三大營養素！</p>
 
           <div
             class="border-2 border-dashed border-pink-300 rounded-2xl p-6 bg-pink-50 relative overflow-hidden min-h-[200px] flex items-center justify-center">
@@ -619,15 +633,48 @@
         </div>
       </div>
     </div>
-
   </div>
+
+  <!-- 記錄體態 Modal -->
+  <div id="bodystat-modal" class="fixed inset-0 bg-slate-900/50 z-[120] hidden flex flex-col justify-end">
+    <div class="bg-white dark:bg-slate-800 rounded-t-3xl p-6 transform transition-transform">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-bold text-slate-800 dark:text-gray-100">⚖️ 記錄體態</h2>
+        <button id="btn-close-bodystat" class="text-slate-400 dark:text-gray-500 hover:text-slate-600 text-2xl">✕</button>
+      </div>
+      <form id="bodystat-form" class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">今日體重 (kg)</label>
+            <input type="number" id="bodystat-weight" step="0.1" required placeholder="例如：65.5" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-500 dark:bg-slate-700 rounded-lg outline-none">
+          </div>
+          <div>
+             <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">體脂肪率 (%)</label>
+             <input type="number" id="bodystat-fat" step="0.1" required placeholder="例如：18.5" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-500 dark:bg-slate-700 rounded-lg outline-none">
+          </div>
+        </div>
+        <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition">儲存紀錄</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 條碼相機 Modal -->
+  <div id="scanner-modal" class="fixed inset-0 bg-black z-[130] hidden flex flex-col pt-8">
+    <div class="px-4 mb-4 flex justify-between items-center text-white">
+      <h3 class="text-lg font-bold">掃描包裝條碼</h3>
+      <button id="btn-close-scanner" class="text-3xl hover:text-gray-300">&times;</button>
+    </div>
+    <div id="qr-reader" class="w-full max-w-sm mx-auto overflow-hidden rounded-lg bg-black"></div>
+    <p class="text-center text-gray-400 text-sm mt-6 px-4">請對準含有熱量標示的食品條碼<br>支援商品範例: 超商便當、進口零食飲品</p>
+  </div>
+
   <!-- 全局 Confirm Modal 容器 -->
   <div id="confirm-modal" class="fixed inset-0 bg-slate-900/60 z-[110] flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-300">
-    <div class="bg-white rounded-3xl p-6 w-10/12 max-w-sm shadow-2xl transform scale-95 transition-transform duration-300" id="confirm-box">
-      <h3 class="text-lg font-bold text-slate-800 mb-2">⚠️ 系統確認</h3>
-      <p id="confirm-message" class="text-sm text-slate-500 mb-6 leading-relaxed">您確定要執行此操作嗎？</p>
+    <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 w-10/12 max-w-sm shadow-2xl transform scale-95 transition-transform duration-300" id="confirm-box">
+      <h3 class="text-lg font-bold text-slate-800 dark:text-gray-100 mb-2">⚠️ 系統確認</h3>
+      <p id="confirm-message" class="text-sm text-slate-500 dark:text-gray-400 mb-6 leading-relaxed">您確定要執行此操作嗎？</p>
       <div class="flex gap-3">
-        <button id="btn-confirm-cancel" class="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition">取消</button>
+        <button id="btn-confirm-cancel" class="flex-1 py-3 bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-gray-300 font-bold rounded-xl hover:bg-slate-200 transition">取消</button>
         <button id="btn-confirm-ok" class="flex-1 py-3 bg-rose-500 text-white font-bold rounded-xl shadow-md hover:bg-rose-600 shadow-rose-500/30 transition">確定刪除</button>
       </div>
     </div>
