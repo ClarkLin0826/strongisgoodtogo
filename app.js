@@ -231,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
     hideLoading();
 
     if (res.success) {
-      alert('密碼重設信件包含認證連結已發送至您的信箱，請至信箱點擊連結更改密碼！');
+      showToast('密碼重設信件包含認證連結已發送至您的信箱，請至信箱點擊連結更改密碼！');
       document.getElementById('forgot-form').classList.add('hidden');
       document.getElementById('login-form').classList.remove('hidden');
       document.getElementById('forgot-form').reset();
@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
     hideLoading();
 
     if (res.success) {
-      alert('密碼重設成功！請使用新密碼重新登入。');
+      showToast('密碼重設成功！請使用新密碼重新登入。');
       document.getElementById('reset-new-password-form').classList.add('hidden');
       document.getElementById('login-form').classList.remove('hidden');
       document.getElementById('reset-new-password-form').reset();
