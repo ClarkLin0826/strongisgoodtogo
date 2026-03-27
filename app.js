@@ -147,8 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
       age: document.getElementById('reg-age').value,
       height: document.getElementById('reg-height').value,
       weight: document.getElementById('reg-weight').value,
-      activity_level: document.getElementById('reg-activity').value,
-      goal: document.getElementById('reg-goal').value
+      activity_level: document.getElementById('reg-activity').value
     };
 
     const res = await apiCall('register', userData);
@@ -264,6 +263,73 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('exercise-modal').classList.add('hidden');
     });
   }
+
+  // --- 6.3 運動計算機 / 手動輸入切換 ---
+  const tabExCalc = document.getElementById('tab-ex-calc');
+  const tabExManual = document.getElementById('tab-ex-manual');
+  if(tabExCalc && tabExManual) {
+    tabExCalc.addEventListener('click', () => {
+      document.getElementById('exercise-mode').value = 'calc';
+      tabExCalc.classList.replace('text-slate-500', 'text-emerald-600');
+      tabExCalc.classList.replace('font-medium', 'font-bold');
+      tabExCalc.classList.add('bg-white', 'shadow-sm');
+      
+      tabExManual.classList.replace('text-emerald-600', 'text-slate-500');
+      tabExManual.classList.replace('font-bold', 'font-medium');
+      tabExManual.classList.remove('bg-white', 'shadow-sm');
+      
+      document.getElementById('ex-calc-container').classList.remove('hidden');
+      document.getElementById('ex-manual-container').classList.add('hidden');
+      
+      const calsInput = document.getElementById('exercise-cals');
+      calsInput.readOnly = true;
+      calsInput.classList.add('bg-slate-50', 'text-emerald-600', 'font-bold');
+      
+      calculateExerciseCals();
+    });
+
+    tabExManual.addEventListener('click', () => {
+      document.getElementById('exercise-mode').value = 'manual';
+      tabExManual.classList.replace('text-slate-500', 'text-emerald-600');
+      tabExManual.classList.replace('font-medium', 'font-bold');
+      tabExManual.classList.add('bg-white', 'shadow-sm');
+      
+      tabExCalc.classList.replace('text-emerald-600', 'text-slate-500');
+      tabExCalc.classList.replace('font-bold', 'font-medium');
+      tabExCalc.classList.remove('bg-white', 'shadow-sm');
+      
+      document.getElementById('ex-calc-container').classList.add('hidden');
+      document.getElementById('ex-manual-container').classList.remove('hidden');
+      
+      const calsInput = document.getElementById('exercise-cals');
+      calsInput.readOnly = false;
+      calsInput.classList.remove('bg-slate-50', 'text-emerald-600', 'font-bold');
+      
+      calsInput.value = '';
+    });
+  }
+
+  function calculateExerciseCals() {
+    if (document.getElementById('exercise-mode')?.value !== 'calc') return;
+    
+    const presetSelect = document.getElementById('exercise-preset');
+    const met = parseFloat(presetSelect.value);
+    const duration = parseFloat(document.getElementById('exercise-duration').value);
+    const weight = currentUser?.weight || 60; // 預設 60kg
+    
+    if (!isNaN(met) && !isNaN(duration) && duration > 0) {
+      // 消耗熱量 = MET * 體重(kg) * 時間(小時)
+      const cals = Math.round(met * weight * (duration / 60));
+      document.getElementById('exercise-cals').value = cals;
+    } else {
+      document.getElementById('exercise-cals').value = '';
+    }
+  }
+
+  const exPreset = document.getElementById('exercise-preset');
+  const exDuration = document.getElementById('exercise-duration');
+  if(exPreset) exPreset.addEventListener('change', calculateExerciseCals);
+  if(exDuration) exDuration.addEventListener('input', calculateExerciseCals);
 
   // --- 6.5 食物選單連動邏輯 ---
   document.getElementById('diet-category').addEventListener('change', (e) => {
@@ -407,12 +473,31 @@ document.addEventListener('DOMContentLoaded', () => {
   if(exerciseForm) {
     exerciseForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      showLoading('儲存運動中...');
       
+      const isCalc = document.getElementById('exercise-mode').value === 'calc';
+      let exName = '';
+      if (isCalc) {
+         const sel = document.getElementById('exercise-preset');
+         if (!sel.value) {
+            alert('請選擇運動項目！');
+            return;
+         }
+         // 去除前面 emoji 和格式
+         exName = sel.options[sel.selectedIndex].text.replace(/^.*?\s+/, '');
+      } else {
+         exName = document.getElementById('exercise-name').value;
+      }
+      
+      if (!exName) {
+         alert('請填寫或選擇運動項目！');
+         return;
+      }
+
+      showLoading('儲存運動中...');
       const payload = {
         userId: currentUser.user_id,
         date: currentDate,
-        type: document.getElementById('exercise-name').value,
+        type: exName,
         duration: document.getElementById('exercise-duration').value,
         calories: document.getElementById('exercise-cals').value
       };
@@ -423,6 +508,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (res.success) {
         document.getElementById('exercise-modal').classList.add('hidden');
         document.getElementById('add-exercise-form').reset();
+        
+        // 預設跳回計算機模式
+        document.getElementById('tab-ex-calc').click();
+        
         loadDailyData();
       } else {
         alert(res.message);
@@ -469,7 +558,88 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     reader.readAsDataURL(file);
   });
+
+  // --- 10. 目標設定 Modal 控制 ---
+  const btnGoal = document.getElementById('btn-goal-settings');
+  const btnCloseGoal = document.getElementById('btn-close-goal');
+  const goalModal = document.getElementById('goal-modal');
+  
+  if (btnGoal && btnCloseGoal && goalModal) {
+    btnGoal.addEventListener('click', () => {
+      document.getElementById('goal-mode').value = 'maintain';
+      document.getElementById('goal-details-container').classList.add('hidden');
+      document.getElementById('goal-kg').value = '';
+      document.getElementById('goal-months').value = '';
+      goalModal.classList.remove('hidden');
+    });
+    
+    btnCloseGoal.addEventListener('click', () => {
+      goalModal.classList.add('hidden');
+    });
+    
+    document.getElementById('goal-mode').addEventListener('change', (e) => {
+      if (e.target.value === 'maintain') {
+        document.getElementById('goal-details-container').classList.add('hidden');
+      } else {
+        document.getElementById('goal-details-container').classList.remove('hidden');
+      }
+    });
+
+    document.getElementById('goal-setting-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const goalMode = document.getElementById('goal-mode').value;
+      let targetKg = 0;
+      let targetMonths = 0;
+      
+      if (goalMode !== 'maintain') {
+        targetKg = document.getElementById('goal-kg').value;
+        targetMonths = document.getElementById('goal-months').value;
+        if (!targetKg || !targetMonths) {
+          alert('請輸入期望變化的公斤數與月數預估！');
+          return;
+        }
+      }
+      
+      showLoading('重新精算目標中...');
+      const payload = {
+        userId: currentUser.user_id,
+        goalMode: goalMode,
+        targetKg: targetKg,
+        targetMonths: targetMonths
+      };
+      
+      const res = await apiCall('updateUserGoal', payload);
+      hideLoading();
+      
+      if (res.success) {
+        currentUser = res.user;
+        localStorage.setItem('nutriLens_user', JSON.stringify(currentUser));
+        goalModal.classList.add('hidden');
+        initDashboard();
+        loadDailyData();
+      } else {
+        alert(res.message);
+      }
+    });
+  }
+
 });
+
+// --- 全域方法：供 HTML onclick 呼叫刪除 ---
+window.deleteLogEntry = async function(logId, logType) {
+  if (!confirm('確定要刪除這筆紀錄嗎？')) return;
+  
+  showLoading('刪除中...');
+  const res = await apiCall('deleteLog', { logId, logType });
+  hideLoading();
+  
+  if (res.success) {
+    loadDailyData();
+  } else {
+    alert(res.message);
+  }
+};
 
 // ==========================================
 // Dashboard 資料邏輯
@@ -530,16 +700,82 @@ async function loadDailyData() {
   }
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+  // --- Profile Edit Event Bindings ---
+  // Must execute after DOM is fully loaded, since updateProfile form logic doesn't exist inside the former loop.
+  // We can attach it directly here or append to the end.
+});
+
+// For safety, placing bindings at the root level if elements exist, or inside a safe listener.
+setTimeout(() => {
+  const btnEditProfile = document.getElementById('btn-edit-profile');
+  const modalProfile = document.getElementById('profile-modal');
+  const btnCloseProfile = document.getElementById('btn-close-profile');
+
+  if (btnEditProfile && modalProfile && btnCloseProfile) {
+    btnEditProfile.addEventListener('click', () => {
+      document.getElementById('edit-age').value = currentUser.age || '';
+      document.getElementById('edit-gender').value = currentUser.gender || 'male';
+      document.getElementById('edit-height').value = currentUser.height || '';
+      document.getElementById('edit-weight').value = currentUser.weight || '';
+      document.getElementById('edit-activity').value = currentUser.activity_level || '1.2';
+      modalProfile.classList.remove('hidden');
+    });
+
+    btnCloseProfile.addEventListener('click', () => {
+      modalProfile.classList.add('hidden');
+    });
+
+    document.getElementById('edit-profile-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      showLoading('更新個人資料與 TDEE 中...');
+      const payload = {
+        userId: currentUser.user_id,
+        age: document.getElementById('edit-age').value,
+        gender: document.getElementById('edit-gender').value,
+        height: document.getElementById('edit-height').value,
+        weight: document.getElementById('edit-weight').value,
+        activityLevel: document.getElementById('edit-activity').value
+      };
+      
+      const res = await apiCall('updateProfile', payload);
+      hideLoading();
+      
+      if (res.success) {
+        currentUser = res.user;
+        localStorage.setItem('nutriLens_user', JSON.stringify(currentUser));
+        modalProfile.classList.add('hidden');
+        alert('個人資料已更新！新的 TDEE 為：' + currentUser.tdee + ' kcal');
+        initDashboard(); 
+        loadDailyData();
+      } else {
+        alert(res.message);
+      }
+    });
+  }
+}, 500);
+
 function updateDashboardUI(stats) {
   const targetCals = currentUser.target_calories || 2000;
   const calsIn = stats.caloriesIn;
   const calsOut = stats.caloriesOut;
-  const remaining = Math.max(0, targetCals - calsIn + calsOut);
+  const remaining = targetCals - calsIn + calsOut;
   
+  document.getElementById('cals-tdee').innerText = currentUser.tdee || 2000;
   document.getElementById('cals-target').innerText = targetCals;
   document.getElementById('cals-in').innerText = calsIn;
   document.getElementById('cals-out').innerText = calsOut;
-  document.getElementById('cals-remaining').innerText = remaining;
+  
+  const remainingEl = document.getElementById('cals-remaining');
+  remainingEl.innerText = remaining;
+  if (remaining < 0) {
+    remainingEl.classList.add('text-rose-500');
+    remainingEl.classList.remove('text-slate-800');
+  } else {
+    remainingEl.classList.add('text-slate-800');
+    remainingEl.classList.remove('text-rose-500');
+  }
   
   const progress = Math.min((calsIn / (targetCals + calsOut)) * 100, 100) || 0;
   document.getElementById('cals-progress').style.width = `${progress}%`;
@@ -549,29 +785,106 @@ function updateDashboardUI(stats) {
   document.getElementById('macro-carbs').innerText = stats.carbs;
   document.getElementById('macro-fat').innerText = stats.fat;
 
+  // 總缺口進度卡片渲染
+  const goalStr = String(currentUser.goal || '');
+  const progressCard = document.getElementById('goal-progress-card');
+  
+  if (goalStr.includes('減脂') || goalStr.includes('增肌')) {
+    progressCard.classList.remove('hidden');
+    
+    // 解析目標公斤數，例如 "減脂 5kg (5個月)"
+    const match = goalStr.match(/(減脂|增肌)\s*([\d\.]+)kg/);
+    if (match && match[2]) {
+      const kg = parseFloat(match[2]);
+      const totalDeficit = kg * 7700;
+      
+      document.getElementById('goal-progress-title').innerText = goalStr;
+      document.getElementById('goal-total-deficit').innerText = totalDeficit;
+      
+      // 計算預期每日缺口 (TDEE 與 目標熱量的差)
+      const dailyDeficit = Math.abs((currentUser.tdee || 2000) - currentUser.target_calories);
+      document.getElementById('goal-daily-deficit').innerText = dailyDeficit;
+      
+      // 計算今日實際達成缺口 (TDEE + 活動消耗 - 飲食)
+      const isLose = match[1] === '減脂';
+      let todayAchieved = 0;
+      if (isLose) {
+         todayAchieved = (currentUser.tdee || 2000) + calsOut - calsIn;
+      } else {
+         todayAchieved = calsIn - ((currentUser.tdee || 2000) + calsOut);
+      }
+      
+      const achievedEl = document.getElementById('goal-today-achieved');
+      achievedEl.innerText = todayAchieved;
+      if (todayAchieved >= 0) {
+         achievedEl.classList.remove('text-rose-500');
+         achievedEl.classList.add('text-emerald-600');
+      } else {
+         achievedEl.classList.remove('text-emerald-600');
+         achievedEl.classList.add('text-rose-500');
+      }
+      
+      // 計算進度扣除後的剩餘
+      const remainingTotal = totalDeficit - todayAchieved;
+      document.getElementById('goal-total-remaining').innerText = remainingTotal;
+    } else {
+      progressCard.classList.add('hidden');
+    }
+  } else {
+    progressCard.classList.add('hidden');
+  }
+
   const container = document.getElementById('logs-container');
   container.innerHTML = '';
   
-  if (stats.dietLogs.length === 0) {
+  if ((!stats.dietLogs || stats.dietLogs.length === 0) && (!stats.exerciseLogs || stats.exerciseLogs.length === 0)) {
     container.innerHTML = '<p class="text-sm text-slate-400 text-center py-4">尚無紀錄，點擊下方按鈕新增！</p>';
   } else {
-    stats.dietLogs.forEach(log => {
-      const aiBadge = (log.is_ai_scanned === true || log.is_ai_scanned === 'TRUE') 
-        ? '<span class="text-[10px] bg-pink-100 text-pink-600 px-2 py-0.5 rounded-full ml-2">✨ AI</span>' : '';
-        
-      container.innerHTML += `
-        <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex justify-between items-center">
-          <div>
-            <p class="font-bold text-slate-800 text-sm">${log.food_name} ${aiBadge}</p>
-            <p class="text-xs text-slate-400">${log.meal_type} • ${log.amount}</p>
+    if (stats.dietLogs && stats.dietLogs.length > 0) {
+      stats.dietLogs.forEach(log => {
+        const aiBadge = (log.is_ai_scanned === true || log.is_ai_scanned === 'TRUE') 
+          ? '<span class="text-[10px] bg-pink-100 text-pink-600 px-2 py-0.5 rounded-full ml-2">✨ AI</span>' : '';
+          
+        container.innerHTML += `
+          <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex justify-between items-center">
+            <div>
+              <p class="font-bold text-slate-800 text-sm">${log.food_name} ${aiBadge}</p>
+              <p class="text-xs text-slate-400">${log.meal_type} • ${log.amount}</p>
+            </div>
+            <div class="text-right flex justify-end gap-3 items-center">
+              <div>
+                <p class="font-bold text-indigo-600">${log.calories} kcal</p>
+                <p class="text-[10px] text-slate-400">P:${log.protein} C:${log.carbs} F:${log.fat}</p>
+              </div>
+              <button onclick="window.deleteLogEntry('${log.log_id}', 'diet')" class="text-rose-300 hover:text-rose-500 transition p-1 cursor-pointer">🗑️</button>
+            </div>
           </div>
-          <div class="text-right">
-            <p class="font-bold text-indigo-600">${log.calories} kcal</p>
-            <p class="text-[10px] text-slate-400">P:${log.protein} C:${log.carbs} F:${log.fat}</p>
+        `;
+      });
+    }
+
+    if (stats.exerciseLogs && stats.exerciseLogs.length > 0) {
+      stats.exerciseLogs.forEach(log => {
+        container.innerHTML += `
+          <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-100 shadow-sm flex justify-between items-center">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">🏃‍♂️</span>
+              <div>
+                <p class="font-bold text-emerald-800 text-sm">${log.exercise_type}</p>
+                <p class="text-xs text-emerald-600/70">${log.duration_mins} 分鐘</p>
+              </div>
+            </div>
+            <div class="text-right flex justify-end gap-3 items-center">
+              <div>
+                <p class="font-bold text-emerald-600">-${log.calories_burned} kcal</p>
+                <p class="text-[10px] text-emerald-500/70">燃燒熱量</p>
+              </div>
+              <button onclick="window.deleteLogEntry('${log.log_id}', 'exercise')" class="text-emerald-400 hover:text-emerald-600 transition p-1 cursor-pointer">🗑️</button>
+            </div>
           </div>
-        </div>
-      `;
-    });
+        `;
+      });
+    }
   }
 }
 
