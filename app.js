@@ -915,7 +915,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // --- 全域方法：供 HTML onclick 呼叫刪除 ---
 window.deleteLogEntry = async function (logId, logType) {
-  if (!confirm('確定要刪除這筆紀錄嗎？')) return;
+  if (!confirm('確定要刪除這筆紀錄嗎？(雲端紀錄也將同步刪除)')) return;
 
   // 樂觀執行本地刪除與畫面更新
   if (logType === 'diet' && window.currentDailyStats) {
@@ -950,8 +950,6 @@ window.deleteLogEntry = async function (logId, logType) {
       if (window.currentWeeklyStats) renderWeeklyChart(window.currentWeeklyStats);
     }
   }
-
-  showToast('刪除同步中...');
 
   // 發送同步資訊給雲端
   const res = await apiCall('deleteLog', { logId, logType });
