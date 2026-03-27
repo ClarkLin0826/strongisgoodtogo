@@ -54,17 +54,34 @@ function hideLoading() {
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
 
-  const cachedUser = localStorage.getItem('nutriLens_user');
-  const cachedTime = localStorage.getItem('nutriLens_time');
-  if (cachedUser && cachedTime) {
-    const now = new Date().getTime();
-    if (now - parseInt(cachedTime) < 604800000) { // 7 天
-      currentUser = JSON.parse(cachedUser);
-      // Wait for DOM to finish loading to call initDashboard by putting it in setTimeout
-      setTimeout(initDashboard, 0); 
-    } else {
-      localStorage.removeItem('nutriLens_user');
-      localStorage.removeItem('nutriLens_time');
+  // --- 0.5 檢查網址是否有重設密碼的 Token ---
+  const urlParams = new URLSearchParams(window.location.search);
+  const resetEmail = urlParams.get('email');
+  const resetToken = urlParams.get('token');
+  
+  if (resetEmail && resetToken) {
+    document.getElementById('login-form').classList.add('hidden');
+    document.getElementById('register-form').classList.add('hidden');
+    document.getElementById('forgot-form').classList.add('hidden');
+    
+    document.getElementById('reset-token-email').value = resetEmail;
+    document.getElementById('reset-token-temp').value = resetToken;
+    document.getElementById('reset-new-password-form').classList.remove('hidden');
+    // 清除網址參數避免重新整理又跳回
+    window.history.replaceState({}, document.title, window.location.pathname);
+  } else {
+    // 沒有密碼重設需求，走原本的快取邏輯
+    const cachedUser = localStorage.getItem('nutriLens_user');
+    const cachedTime = localStorage.getItem('nutriLens_time');
+    if (cachedUser && cachedTime) {
+      const now = new Date().getTime();
+      if (now - parseInt(cachedTime) < 604800000) { // 7 天
+        currentUser = JSON.parse(cachedUser);
+        setTimeout(initDashboard, 0); 
+      } else {
+        localStorage.removeItem('nutriLens_user');
+        localStorage.removeItem('nutriLens_time');
+      }
     }
   }
 
@@ -168,17 +185,41 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- 4.5 忘記密碼 ---
   document.getElementById('forgot-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    showLoading('發送重設信件中...');
+    showLoading('寄發密碼重設信件中...');
     
     const email = document.getElementById('forgot-email').value;
-    const res = await apiCall('forgotPassword', { email });
+    // 取得當下網址，這樣信件裡的連結才能正確帶回這個前端環境
+    const baseUrl = window.location.href.split('?')[0]; 
+    const res = await apiCall('forgotPassword', { email, baseUrl });
     hideLoading();
     
     if (res.success) {
-      alert('新密碼已成功寄發至您的信箱，請使用新密碼重新登入！');
+      alert('密碼重設信件包含認證連結已發送至您的信箱，請至信箱點擊連結更改密碼！');
       document.getElementById('forgot-form').classList.add('hidden');
       document.getElementById('login-form').classList.remove('hidden');
       document.getElementById('forgot-form').reset();
+    } else {
+      alert(res.message);
+    }
+  });
+
+  // --- 4.6 設定新密碼 ---
+  document.getElementById('reset-new-password-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    showLoading('更新密碼中...');
+    
+    const email = document.getElementById('reset-token-email').value;
+    const tempPass = document.getElementById('reset-token-temp').value;
+    const newPass = document.getElementById('reset-new-password').value;
+    
+    const res = await apiCall('updatePassword', { email, tempPass, newPass });
+    hideLoading();
+    
+    if (res.success) {
+      alert('密碼重設成功！請使用新密碼重新登入。');
+      document.getElementById('reset-new-password-form').classList.add('hidden');
+      document.getElementById('login-form').classList.remove('hidden');
+      document.getElementById('reset-new-password-form').reset();
     } else {
       alert(res.message);
     }
@@ -208,6 +249,21 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-close-diet').addEventListener('click', () => {
     document.getElementById('diet-modal').classList.add('hidden');
   });
+
+  // --- 6.2 運動 Modal 控制 ---
+  const btnOpenEx = document.getElementById('btn-open-exercise');
+  if(btnOpenEx) {
+    btnOpenEx.addEventListener('click', () => {
+      document.getElementById('exercise-modal').classList.remove('hidden');
+    });
+  }
+  
+  const btnCloseEx = document.getElementById('btn-close-exercise');
+  if(btnCloseEx) {
+    btnCloseEx.addEventListener('click', () => {
+      document.getElementById('exercise-modal').classList.add('hidden');
+    });
+  }
 
   // --- 6.5 食物選單連動邏輯 ---
   document.getElementById('diet-category').addEventListener('change', (e) => {
@@ -345,6 +401,34 @@ document.addEventListener('DOMContentLoaded', () => {
       alert(res.message);
     }
   });
+
+  // --- 7.5 新增運動紀錄 ---
+  const exerciseForm = document.getElementById('add-exercise-form');
+  if(exerciseForm) {
+    exerciseForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      showLoading('儲存運動中...');
+      
+      const payload = {
+        userId: currentUser.user_id,
+        date: currentDate,
+        type: document.getElementById('exercise-name').value,
+        duration: document.getElementById('exercise-duration').value,
+        calories: document.getElementById('exercise-cals').value
+      };
+
+      const res = await apiCall('addExerciseLog', payload);
+      hideLoading();
+      
+      if (res.success) {
+        document.getElementById('exercise-modal').classList.add('hidden');
+        document.getElementById('add-exercise-form').reset();
+        loadDailyData();
+      } else {
+        alert(res.message);
+      }
+    });
+  }
 
   // --- 8. AI Modal 控制 ---
   document.getElementById('btn-close-ai').addEventListener('click', () => {

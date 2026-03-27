@@ -74,6 +74,21 @@
         </p>
       </form>
 
+      <!-- 重設密碼 (透過連結) -->
+      <form id="reset-new-password-form" class="space-y-4 hidden">
+        <div class="text-center mb-4">
+          <h2 class="text-xl font-bold text-slate-800">設定新密碼</h2>
+          <p class="text-xs text-slate-500 mt-1">請輸入您的新密碼以完成重設。</p>
+        </div>
+        <input type="hidden" id="reset-token-email">
+        <input type="hidden" id="reset-token-temp">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">新密碼</label>
+          <input type="password" id="reset-new-password" required class="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-700 transition">更新密碼</button>
+      </form>
+
       <form id="register-form" class="space-y-4 hidden max-h-[85vh] overflow-y-auto overflow-x-hidden p-1">
         <div class="grid grid-cols-2 gap-4">
           <div class="col-span-2">
@@ -204,16 +219,14 @@
         </div>
       </main>
 
-      <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pb-6">
-        <div class="flex gap-2">
-          <button id="btn-open-diet" class="flex-1 bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition flex items-center justify-center gap-2">
-            <span>+ 記飲食</span>
-          </button>
-          <button id="btn-open-ai" class="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-pink-200 hover:opacity-90 transition flex items-center justify-center gap-2">
-            <span>✨ AI 拍照</span>
-          </button>
-        </div>
+      <!-- 底部動作 -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 max-w-sm mx-auto z-40">
+      <div class="grid grid-cols-3 gap-2">
+        <button id="btn-open-diet" class="col-span-1 bg-indigo-600 text-white font-bold py-3 rounded-xl shadow text-sm truncate hover:bg-indigo-700 transition">+ 記飲食</button>
+        <button id="btn-open-exercise" class="col-span-1 bg-emerald-500 text-white font-bold py-3 rounded-xl shadow text-sm truncate hover:bg-emerald-600 transition">+ 記運動</button>
+        <button id="btn-open-ai" class="col-span-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-3 rounded-xl shadow text-sm truncate hover:opacity-90 transition">✨ AI 辨識</button>
       </div>
+    </div>
     </div>
 
     <div id="diet-modal" class="fixed inset-0 bg-slate-900/50 z-50 hidden flex flex-col justify-end">
@@ -283,6 +296,35 @@
         </form>
       </div>
     </div>
+  <!-- 新增運動紀錄 Modal -->
+  <div id="exercise-modal" class="fixed inset-0 bg-slate-900/50 z-50 hidden flex flex-col justify-end">
+    <div class="bg-white rounded-t-3xl p-6 transform transition-transform">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-bold text-slate-800">新增運動紀錄</h2>
+        <button id="btn-close-exercise" class="text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+      
+      <form id="add-exercise-form" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-500 mb-1">運動項目</label>
+          <input type="text" id="exercise-name" required placeholder="例如：跑步、健身、游泳" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:border-emerald-500">
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-500 mb-1">時間 (分鐘)</label>
+            <input type="number" id="exercise-duration" required placeholder="30" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none text-right focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-500 mb-1">消耗熱量 (kcal)</label>
+            <input type="number" id="exercise-cals" required placeholder="300" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none text-right focus:border-emerald-500">
+          </div>
+        </div>
+        
+        <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl mt-4">儲存紀錄</button>
+      </form>
+    </div>
+  </div>
 
     <div id="ai-modal" class="fixed inset-0 bg-slate-900/50 z-50 hidden flex flex-col justify-end">
       <div class="bg-white rounded-t-3xl p-6">
