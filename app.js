@@ -13,6 +13,8 @@ let dietCart = [];
 let macrosChartInstance = null;
 let weeklyChartInstance = null;
 let currentAiBase64 = null;
+window.currentDailyStats = null;
+window.currentWeeklyStats = null;
 
 // ==========================================
 // 核心 API 呼叫函式
@@ -52,6 +54,37 @@ function showLoading(text = '處理中...') {
 
 function hideLoading() {
   document.getElementById('loading-overlay').classList.add('hidden');
+}
+
+function showToast(message, type = 'success') {
+  const container = document.getElementById('toast-container');
+  if (!container) {
+    if (type === 'error') alert('❌ ' + message);
+    else alert('✅ ' + message);
+    return;
+  }
+  
+  const toast = document.createElement('div');
+  const bgColor = type === 'success' ? 'bg-emerald-600' : (type === 'error' ? 'bg-rose-600' : 'bg-indigo-600');
+  const icon = type === 'success' ? '✅' : (type === 'error' ? '⚠️' : 'ℹ️');
+  
+  toast.className = `transform transition-all duration-300 -translate-y-[20px] opacity-0 flex items-center gap-3 ${bgColor} text-white px-4 py-3 rounded-xl shadow-lg w-full`;
+  toast.innerHTML = `<span>${icon}</span><span class="text-sm font-medium flex-1">${message}</span>`;
+  
+  container.appendChild(toast);
+  
+  requestAnimationFrame(() => {
+    toast.classList.remove('-translate-y-[20px]', 'opacity-0');
+    toast.classList.add('translate-y-0', 'opacity-100');
+  });
+  
+  setTimeout(() => {
+    toast.classList.remove('translate-y-0', 'opacity-100');
+    toast.classList.add('-translate-y-[20px]', 'opacity-0');
+    setTimeout(() => {
+      if (container.contains(toast)) container.removeChild(toast);
+    }, 300);
+  }, 3000);
 }
 
 // ==========================================
@@ -622,12 +655,39 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.innerText = oldText;
 
     if (res.success) {
+      if (window.currentDailyStats) {
+        dietCart.forEach(log => {
+          const itemCals = Number(log.calories) || 0;
+          window.currentDailyStats.dietLogs.push({
+            log_id: 'temp-diet-' + Date.now() + Math.random(),
+            food_name: log.foodName,
+            meal_type: log.mealType || 'Breakfast',
+            amount: log.amount,
+            calories: itemCals,
+            protein: Number(log.protein) || 0,
+            carbs: Number(log.carbs) || 0,
+            fat: Number(log.fat) || 0,
+            is_ai_scanned: log.isAiScanned,
+            created_at: new Date().toISOString()
+          });
+          window.currentDailyStats.caloriesIn += itemCals;
+          window.currentDailyStats.protein += Number(log.protein) || 0;
+          window.currentDailyStats.carbs += Number(log.carbs) || 0;
+          window.currentDailyStats.fat += Number(log.fat) || 0;
+
+          if (window.currentWeeklyStats && window.currentWeeklyStats.length > 0) {
+            window.currentWeeklyStats[window.currentWeeklyStats.length - 1].in += itemCals;
+          }
+        });
+        updateDashboardUI(window.currentDailyStats);
+        if (window.currentWeeklyStats) renderWeeklyChart(window.currentWeeklyStats);
+      }
+
       document.getElementById('diet-modal').classList.add('hidden');
       document.getElementById('add-diet-form').reset();
       document.getElementById('diet-is-ai').value = 'false';
       dietCart = [];
       showToast('紀錄已成功批次儲存！');
-      loadDailyData(); // 重新載入畫面資料
     } else {
       showToast(res.message, 'error');
     }
@@ -671,13 +731,31 @@ document.addEventListener('DOMContentLoaded', () => {
       hideLoading();
 
       if (res.success) {
+        if (window.currentDailyStats) {
+          const itemCals = Number(payload.calories) || 0;
+          window.currentDailyStats.exerciseLogs.push({
+            log_id: 'temp-ex-' + Date.now() + Math.random(),
+            exercise_type: payload.type,
+            duration_mins: payload.duration,
+            calories_burned: itemCals,
+            created_at: new Date().toISOString()
+          });
+          window.currentDailyStats.caloriesOut += itemCals;
+
+          if (window.currentWeeklyStats && window.currentWeeklyStats.length > 0) {
+            window.currentWeeklyStats[window.currentWeeklyStats.length - 1].out += itemCals;
+          }
+          updateDashboardUI(window.currentDailyStats);
+          if (window.currentWeeklyStats) renderWeeklyChart(window.currentWeeklyStats);
+        }
+
         document.getElementById('exercise-modal').classList.add('hidden');
         document.getElementById('add-exercise-form').reset();
 
         // 預設跳回計算機模式
         document.getElementById('tab-ex-calc').click();
 
-        loadDailyData();
+        showToast('運動紀錄新增成功！');
       } else {
         showToast(res.message, 'error');
       }
@@ -839,14 +917,50 @@ document.addEventListener('DOMContentLoaded', () => {
 window.deleteLogEntry = async function (logId, logType) {
   if (!confirm('確定要刪除這筆紀錄嗎？')) return;
 
-  showLoading('刪除中...');
-  const res = await apiCall('deleteLog', { logId, logType });
-  hideLoading();
+  // 樂觀執行本地刪除與畫面更新
+  if (logType === 'diet' && window.currentDailyStats) {
+    const idx = window.currentDailyStats.dietLogs.findIndex(x => x.log_id === logId);
+    if (idx > -1) {
+      const log = window.currentDailyStats.dietLogs[idx];
+      window.currentDailyStats.caloriesIn -= (Number(log.calories) || 0);
+      window.currentDailyStats.protein -= (Number(log.protein) || 0);
+      window.currentDailyStats.carbs -= (Number(log.carbs) || 0);
+      window.currentDailyStats.fat -= (Number(log.fat) || 0);
+      
+      if (window.currentWeeklyStats && window.currentWeeklyStats.length > 0) {
+        window.currentWeeklyStats[window.currentWeeklyStats.length - 1].in -= (Number(log.calories) || 0);
+      }
+      
+      window.currentDailyStats.dietLogs.splice(idx, 1);
+      updateDashboardUI(window.currentDailyStats);
+      if (window.currentWeeklyStats) renderWeeklyChart(window.currentWeeklyStats);
+    }
+  } else if (logType === 'exercise' && window.currentDailyStats) {
+    const idx = window.currentDailyStats.exerciseLogs.findIndex(x => x.log_id === logId);
+    if (idx > -1) {
+      const log = window.currentDailyStats.exerciseLogs[idx];
+      window.currentDailyStats.caloriesOut -= (Number(log.calories_burned) || 0);
+      
+      if (window.currentWeeklyStats && window.currentWeeklyStats.length > 0) {
+        window.currentWeeklyStats[window.currentWeeklyStats.length - 1].out -= (Number(log.calories_burned) || 0);
+      }
+      
+      window.currentDailyStats.exerciseLogs.splice(idx, 1);
+      updateDashboardUI(window.currentDailyStats);
+      if (window.currentWeeklyStats) renderWeeklyChart(window.currentWeeklyStats);
+    }
+  }
 
-  if (res.success) {
-    loadDailyData();
+  showToast('刪除同步中...');
+
+  // 發送同步資訊給雲端
+  const res = await apiCall('deleteLog', { logId, logType });
+
+  if (!res.success) {
+    showToast('與伺服器同步刪除失敗', 'error');
+    loadDailyData(); // rollback UI
   } else {
-    showToast(res.message, 'error');
+    showToast('紀錄已同步刪除！');
   }
 };
 
@@ -902,13 +1016,15 @@ async function loadDailyData() {
   const res = await apiCall('getDailyStats', { userId: currentUser.user_id, targetDate: currentDate });
 
   if (res.success) {
-    updateDashboardUI(res.stats);
+    window.currentDailyStats = res.stats;
+    updateDashboardUI(window.currentDailyStats);
 
     const weekRes = await apiCall('getWeeklyStats', { userId: currentUser.user_id, targetDate: currentDate });
     hideLoading();
 
     if (weekRes.success) {
-      renderWeeklyChart(weekRes.stats);
+      window.currentWeeklyStats = weekRes.stats;
+      renderWeeklyChart(window.currentWeeklyStats);
     }
   } else {
     hideLoading();
