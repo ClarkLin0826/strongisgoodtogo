@@ -509,16 +509,18 @@
           <button id="btn-close-ai" class="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
         </div>
         <div class="space-y-4 text-center">
-          <p class="text-sm text-slate-500 mb-4">上傳食物照片，讓 AI 幫您估算熱量與營養素！</p>
+          <p class="text-sm text-slate-500 mb-4">✨ 拍下即刻辨識熱量與三大營養素！</p>
           
-          <div class="border-2 border-dashed border-pink-300 rounded-2xl p-8 bg-pink-50 relative">
-            <input type="file" id="ai-image-input" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-            <div id="ai-preview-container" class="pointer-events-none">
-              <span class="text-4xl mb-2 block">📸</span>
-              <span class="text-sm font-bold text-pink-600">點擊拍照或上傳圖片</span>
+          <div class="border-2 border-dashed border-pink-300 rounded-2xl p-6 bg-pink-50 relative overflow-hidden min-h-[200px] flex items-center justify-center">
+            <input type="file" id="ai-image-input" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+            <div id="ai-preview-container" class="pointer-events-none flex flex-col items-center">
+              <span class="text-5xl mb-2">📸</span>
+              <span class="text-sm font-bold text-pink-600">點擊開啟相機 / 相簿</span>
             </div>
-            <img id="ai-image-preview" class="hidden w-full h-40 object-cover rounded-xl mt-2 pointer-events-none">
+            <img id="ai-image-preview" class="hidden absolute inset-0 w-full h-full object-cover z-0">
           </div>
+          
+          <button type="button" id="btn-submit-ai" class="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-3 rounded-xl shadow-md hover:shadow-lg transition hidden disabled:opacity-50 mt-4">🚀 讓 AI 開始辨識</button>
         </div>
       </div>
     </div>

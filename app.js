@@ -5,12 +5,14 @@
 const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzj7n9sOar-So8_Yy-7gwr5EokeqoDRJFzjWOMxBfn--AtgcERVapjitNureZF-2sYx/exec'; 
 
 let currentUser = null;
-let currentDate = new Date().toISOString().split('T')[0];
+const tzOffset = (new Date()).getTimezoneOffset() * 60000;
+let currentDate = new Date(Date.now() - tzOffset).toISOString().split('T')[0];
 let foodDatabase = { categories: [], foods: [] };
 let selectedFoodBase = null;
 let dietCart = [];
 let macrosChartInstance = null;
 let weeklyChartInstance = null;
+let currentAiBase64 = null;
 
 // ==========================================
 // 核心 API 呼叫函式
@@ -676,41 +678,80 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- 8. AI Modal 控制 ---
   document.getElementById('btn-close-ai').addEventListener('click', () => {
     document.getElementById('ai-modal').classList.add('hidden');
-    // 重置圖片上傳預覽
+    resetAiModalUI();
+  });
+
+  function resetAiModalUI() {
     document.getElementById('ai-image-input').value = '';
     document.getElementById('ai-image-preview').classList.add('hidden');
     document.getElementById('ai-preview-container').classList.remove('hidden');
-  });
+    document.getElementById('btn-submit-ai').classList.add('hidden');
+    document.getElementById('btn-submit-ai').disabled = false;
+    document.getElementById('btn-submit-ai').innerText = '🚀 讓 AI 開始辨識';
+    currentAiBase64 = null;
+  }
 
   document.getElementById('btn-open-ai').addEventListener('click', (e) => {
-    // 檢查方案，如果不是 Premium 則阻擋
-    if (currentUser.plan_type !== 'Premium') {
-      e.preventDefault();
-      alert('此功能專屬於 Premium 帳號，請升級您的方案以解鎖 AI 拍照辨識！');
-      return;
-    }
+    // 您可以決定是否要限制 Premium。目前暫時開放體驗
+    resetAiModalUI();
     document.getElementById('ai-modal').classList.remove('hidden');
   });
 
-  // --- 9. AI 圖片上傳與預覽 ---
+  // --- 9. AI 圖片壓縮與預覽 ---
   document.getElementById('ai-image-input').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = function(event) {
-      const base64Data = event.target.result;
-      
-      // 顯示預覽圖
-      document.getElementById('ai-preview-container').classList.add('hidden');
-      const previewImg = document.getElementById('ai-image-preview');
-      previewImg.src = base64Data;
-      previewImg.classList.remove('hidden');
+      const img = new Image();
+      img.onload = function() {
+        const MAX_SIZE = 800; // 壓縮圖片最大邊長至 800px 以減少 API 爆頭風險
+        let width = img.width;
+        let height = img.height;
 
-      // 呼叫 AI 辨識函式
-      analyzeWithGemini(base64Data);
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // 轉出高壓縮率的 JPEG
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+        currentAiBase64 = compressedBase64;
+
+        // 顯示預覽圖
+        document.getElementById('ai-preview-container').classList.add('hidden');
+        const previewImg = document.getElementById('ai-image-preview');
+        previewImg.src = compressedBase64;
+        previewImg.classList.remove('hidden');
+        
+        // 顯示執行辨識按鈕
+        document.getElementById('btn-submit-ai').classList.remove('hidden');
+      };
+      img.src = event.target.result;
     };
     reader.readAsDataURL(file);
+  });
+  
+  // --- 9.5 觸發 AI 辨識 ---
+  document.getElementById('btn-submit-ai').addEventListener('click', () => {
+    if (!currentAiBase64) return;
+    document.getElementById('btn-submit-ai').disabled = true;
+    document.getElementById('btn-submit-ai').innerText = '⏳ AI 正在深度分析中...';
+    analyzeWithGemini(currentAiBase64);
   });
 
   // --- 10. 目標設定 Modal 控制 ---
