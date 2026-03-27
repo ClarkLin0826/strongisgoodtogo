@@ -6,6 +6,8 @@ const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzj7n9sOar-So8_Yy-7
 
 let currentUser = null;
 let currentDate = new Date().toISOString().split('T')[0];
+let foodDatabase = { categories: [], foods: [] };
+let selectedFoodBase = null;
 
 // ==========================================
 // 核心 API 呼叫函式
@@ -133,6 +135,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- 6. 飲食 Modal 控制 ---
   document.getElementById('btn-open-diet').addEventListener('click', () => {
+    document.getElementById('diet-is-ai').value = 'false';
+    document.getElementById('food-select-container').classList.remove('hidden');
+    document.getElementById('custom-food-container').classList.add('hidden');
+    document.getElementById('food-dropdown-wrapper').classList.remove('hidden');
+    
+    document.getElementById('diet-category').value = '';
+    document.getElementById('diet-food').disabled = true;
+    
+    document.getElementById('diet-cals').readOnly = true;
+    document.getElementById('diet-pro').readOnly = true;
+    document.getElementById('diet-carb').readOnly = true;
+    document.getElementById('diet-fat').readOnly = true;
+    
     document.getElementById('diet-modal').classList.remove('hidden');
   });
   
@@ -140,10 +155,116 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('diet-modal').classList.add('hidden');
   });
 
+  // --- 6.5 食物選單連動邏輯 ---
+  document.getElementById('diet-category').addEventListener('change', (e) => {
+    const prefix = e.target.value;
+    const foodSelect = document.getElementById('diet-food');
+    
+    if (prefix === 'custom') {
+      document.getElementById('food-dropdown-wrapper').classList.add('hidden');
+      document.getElementById('custom-food-container').classList.remove('hidden');
+      document.getElementById('diet-name').value = '';
+      
+      document.getElementById('diet-cals').readOnly = false;
+      document.getElementById('diet-pro').readOnly = false;
+      document.getElementById('diet-carb').readOnly = false;
+      document.getElementById('diet-fat').readOnly = false;
+      
+      document.getElementById('diet-amount-input').value = 1;
+      document.getElementById('diet-unit-label').innerText = '份';
+      
+      selectedFoodBase = null;
+      resetDietFormValues(true);
+      return;
+    }
+
+    document.getElementById('food-dropdown-wrapper').classList.remove('hidden');
+    document.getElementById('custom-food-container').classList.add('hidden');
+    
+    document.getElementById('diet-cals').readOnly = true;
+    document.getElementById('diet-pro').readOnly = true;
+    document.getElementById('diet-carb').readOnly = true;
+    document.getElementById('diet-fat').readOnly = true;
+
+    foodSelect.innerHTML = '<option value="" disabled selected>請選擇食物...</option>';
+    
+    const matchedFoods = foodDatabase.foods.filter(f => f.food_id.startsWith(prefix));
+    matchedFoods.forEach(f => {
+      const opt = document.createElement('option');
+      opt.value = f.food_id;
+      opt.textContent = `${f.name} (${f.calories}kcal/${f.serving_unit})`;
+      foodSelect.appendChild(opt);
+    });
+    
+    foodSelect.disabled = false;
+    selectedFoodBase = null;
+    resetDietFormValues();
+  });
+
+  document.getElementById('diet-food').addEventListener('change', (e) => {
+    const foodId = e.target.value;
+    const food = foodDatabase.foods.find(f => f.food_id === foodId);
+    if (!food) return;
+    
+    selectedFoodBase = food;
+    document.getElementById('diet-name').value = food.name;
+    
+    // 解析 serving_unit (例如 "100g" -> 基準值100, 單位"g", "1碗" -> 基準值1, 單位"碗")
+    let match = food.serving_unit.match(/^([\d.]+)(.*)$/);
+    if (match) {
+      selectedFoodBase.baseAmount = parseFloat(match[1]) || 1;
+      document.getElementById('diet-unit-label').innerText = match[2] || '份';
+    } else {
+      selectedFoodBase.baseAmount = 1;
+      document.getElementById('diet-unit-label').innerText = food.serving_unit || '份';
+    }
+    
+    document.getElementById('diet-amount-input').value = selectedFoodBase.baseAmount;
+    calculateMacros();
+  });
+
+  document.getElementById('diet-amount-input').addEventListener('input', calculateMacros);
+
+  function resetDietFormValues(isCustom = false) {
+    if (!isCustom) {
+      document.getElementById('diet-amount-input').value = '';
+      document.getElementById('diet-unit-label').innerText = '-';
+      document.getElementById('diet-cals').value = '';
+      document.getElementById('diet-pro').value = '';
+      document.getElementById('diet-carb').value = '';
+      document.getElementById('diet-fat').value = '';
+    }
+    document.getElementById('diet-amount').value = '';
+  }
+
+  function calculateMacros() {
+    if (!selectedFoodBase) return;
+    const inputVal = parseFloat(document.getElementById('diet-amount-input').value) || 0;
+    const ratio = inputVal / selectedFoodBase.baseAmount;
+    
+    document.getElementById('diet-cals').value = Math.round(selectedFoodBase.calories * ratio);
+    document.getElementById('diet-pro').value = Math.round((selectedFoodBase.protein * ratio) * 10) / 10;
+    document.getElementById('diet-carb').value = Math.round((selectedFoodBase.carbs * ratio) * 10) / 10;
+    document.getElementById('diet-fat').value = Math.round((selectedFoodBase.fat * ratio) * 10) / 10;
+    
+    const unit = document.getElementById('diet-unit-label').innerText;
+    document.getElementById('diet-amount').value = `${inputVal}${unit}`;
+  }
+
   // --- 7. 送出飲食紀錄 ---
   document.getElementById('add-diet-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     showLoading('儲存中...');
+    
+    const isAi = document.getElementById('diet-is-ai').value === 'true';
+    const isCustom = document.getElementById('diet-category').value === 'custom';
+    
+    // 若為 AI 模式或使用者有選擇自訂，重新組裝 amount
+    if (isAi || isCustom) {
+       const u = document.getElementById('diet-unit-label').innerText;
+       const v = document.getElementById('diet-amount-input').value;
+       document.getElementById('diet-amount').value = `${v}${u}`;
+    }
     
     const payload = {
       userId: currentUser.user_id,
@@ -229,6 +350,31 @@ function initDashboard() {
   }
 
   loadDailyData();
+  loadFoodDatabase();
+}
+
+async function loadFoodDatabase() {
+  const res = await apiCall('getFoodData', {});
+  if (res.success) {
+    foodDatabase = res.data;
+    
+    const catSelect = document.getElementById('diet-category');
+    catSelect.innerHTML = '<option value="" disabled selected>請選擇大分類...</option>';
+    
+    foodDatabase.categories.forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat.prefix;
+      opt.textContent = `${cat.name} (${cat.prefix})`;
+      catSelect.appendChild(opt);
+    });
+    
+    const customOpt = document.createElement('option');
+    customOpt.value = 'custom';
+    customOpt.textContent = '✍️ 自訂其他食物';
+    catSelect.appendChild(customOpt);
+  } else {
+    console.error('Failed to load food database:', res.message);
+  }
 }
 
 async function loadDailyData() {
@@ -309,13 +455,28 @@ async function analyzeWithGemini(base64Data) {
     
     // 將 AI 回傳的資料填入「手動新增」的表單中
     const data = res.data;
-    document.getElementById('diet-name').value = data.foodName || '';
-    document.getElementById('diet-amount').value = data.estimatedAmount || '';
+    document.getElementById('diet-is-ai').value = 'true';
+    
+    document.getElementById('food-select-container').classList.add('hidden');
+    document.getElementById('custom-food-container').classList.remove('hidden');
+    
+    document.getElementById('diet-name').value = data.foodName || 'AI 辨識食物';
+    
+    // 開放 AI 狀態下的編輯權限
+    document.getElementById('diet-cals').readOnly = false;
+    document.getElementById('diet-pro').readOnly = false;
+    document.getElementById('diet-carb').readOnly = false;
+    document.getElementById('diet-fat').readOnly = false;
+
+    // 解析預估份量
+    document.getElementById('diet-amount-input').value = 1;
+    document.getElementById('diet-unit-label').innerText = data.estimatedAmount ? data.estimatedAmount.replace(/[\d\.]+/g, '').trim() || '份' : '份';
+    document.getElementById('diet-amount').value = data.estimatedAmount || '1 份';
+    
     document.getElementById('diet-cals').value = data.calories || 0;
     document.getElementById('diet-pro').value = data.protein || 0;
     document.getElementById('diet-carb').value = data.carbs || 0;
     document.getElementById('diet-fat').value = data.fat || 0;
-    document.getElementById('diet-is-ai').value = 'true';
     
     // 打開手動新增表單讓使用者確認
     document.getElementById('diet-modal').classList.remove('hidden');
