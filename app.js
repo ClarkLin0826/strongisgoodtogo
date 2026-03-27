@@ -522,10 +522,15 @@ document.addEventListener('DOMContentLoaded', () => {
     
     container.classList.remove('hidden');
     dietCart.forEach((item, index) => {
+      const mealLabel = { 'Breakfast': '早餐', 'Lunch': '午餐', 'Dinner': '晚餐', 'Snack': '點心' }[item.mealType] || item.mealType;
+      
       list.innerHTML += `
         <li class="flex justify-between items-center bg-slate-50 p-2 rounded-lg border border-slate-100">
           <div>
-            <p class="text-sm font-bold text-slate-700">${item.foodName} <span class="text-xs text-indigo-500 bg-indigo-50 px-1 rounded ml-1">${item.amount}</span></p>
+            <p class="text-sm font-bold text-slate-700">
+              <span class="text-[10px] bg-slate-200 text-slate-600 px-1 py-0.5 rounded mr-1">${mealLabel}</span>
+              ${item.foodName} <span class="text-xs text-indigo-500 bg-indigo-50 px-1 rounded ml-1">${item.amount}</span>
+            </p>
             <p class="text-[10px] text-slate-500 uppercase mt-0.5">P: ${item.protein} | C: ${item.carbs} | F: ${item.fat}</p>
           </div>
           <div class="flex items-center gap-3">
@@ -563,6 +568,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     dietCart.push({
+      mealType: document.getElementById('diet-meal').value,
       foodName: foodName,
       amount: finalAmount,
       calories: cals,
@@ -597,7 +603,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const payload = {
       userId: currentUser.user_id,
       date: currentDate,
-      mealType: document.getElementById('diet-meal').value,
       logs: dietCart
     };
 
