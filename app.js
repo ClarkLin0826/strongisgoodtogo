@@ -702,7 +702,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('btn-open-ai').addEventListener('click', (e) => {
     // 檢查方案，如果不是 Premium 則阻擋
-    if (currentUser.plan_type !== 'Premium') {
+    if (String(currentUser.plan_type).toLowerCase() !== 'premium') {
       e.preventDefault();
       showToast('此功能專屬於 Premium 帳號，請升級您的方案以解鎖 AI 拍照辨識！', 'error');
       return;
@@ -861,7 +861,7 @@ function initDashboard() {
 
   // 視覺化處理 AI 按鈕 (如果不是 Premium)
   const aiBtn = document.getElementById('btn-open-ai');
-  if (currentUser.plan_type !== 'Premium') {
+  if (String(currentUser.plan_type).toLowerCase() !== 'premium') {
     aiBtn.classList.add('opacity-50', 'grayscale');
   } else {
     aiBtn.classList.remove('opacity-50', 'grayscale');
