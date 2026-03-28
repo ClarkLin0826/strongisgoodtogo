@@ -113,7 +113,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (darkIcon) darkIcon.classList.remove('hidden');
   }
 
-  // 初始化 Chart 主題
   updateChartTheme(document.documentElement.classList.contains('dark'));
 
   if (themeToggleBtn) {
@@ -244,6 +243,42 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('register-form').classList.add('hidden');
     document.getElementById('login-form').classList.remove('hidden');
     showView('auth-view');
+  });
+
+  // --- 忘記密碼邏輯 ---
+  document.getElementById('forgot-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    showLoading('寄發密碼重設信件中...');
+    const email = document.getElementById('forgot-email').value;
+    const baseUrl = window.location.href.split('?')[0];
+    const res = await apiCall('forgotPassword', { email, baseUrl });
+    hideLoading();
+    if (res.success) {
+      showToast('密碼重設信件包含認證連結已發送至您的信箱，請至信箱點擊連結更改密碼！');
+      document.getElementById('forgot-form').classList.add('hidden');
+      document.getElementById('login-form').classList.remove('hidden');
+      document.getElementById('forgot-form').reset();
+    } else {
+      showToast(res.message, 'error');
+    }
+  });
+
+  document.getElementById('reset-new-password-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    showLoading('更新密碼中...');
+    const email = document.getElementById('reset-token-email').value;
+    const tempPass = document.getElementById('reset-token-temp').value;
+    const newPass = document.getElementById('reset-new-password').value;
+    const res = await apiCall('updatePassword', { email, tempPass, newPass });
+    hideLoading();
+    if (res.success) {
+      showToast('密碼重設成功！請使用新密碼重新登入。');
+      document.getElementById('reset-new-password-form').classList.add('hidden');
+      document.getElementById('login-form').classList.remove('hidden');
+      document.getElementById('reset-new-password-form').reset();
+    } else {
+      showToast(res.message, 'error');
+    }
   });
 
   // --- 日期切換 ---
@@ -474,7 +509,9 @@ document.addEventListener('DOMContentLoaded', () => {
       
       if (!html5QrcodeScanner) {
         html5QrcodeScanner = new Html5QrcodeScanner(
-          "reader", { fps: 10, qrbox: { width: 250, height: 150 }, aspectRatio: 1.0 }, false
+          "reader", 
+          { fps: 10, qrbox: { width: 250, height: 150 }, aspectRatio: 1.0 }, 
+          false
         );
         
         html5QrcodeScanner.render(async (decodedText, decodedResult) => {
@@ -490,13 +527,15 @@ document.addEventListener('DOMContentLoaded', () => {
               const product = data.product;
               const nutriments = product.nutriments;
 
-              document.getElementById('diet-category').value = 'custom';
-              document.getElementById('diet-category').dispatchEvent(new Event('change'));
+              const catSelect = document.getElementById('diet-category');
+              catSelect.value = 'custom';
+              catSelect.dispatchEvent(new Event('change'));
 
               const productName = product.product_name_zh || product.product_name || '掃描商品';
               document.getElementById('diet-name').value = productName;
 
               const cals = nutriments['energy-kcal_100g'] || (nutriments['energy_100g'] ? nutriments['energy_100g'] / 4.184 : 0);
+              
               document.getElementById('diet-amount-input').value = 100;
               document.getElementById('diet-unit-label').innerText = 'g';
               document.getElementById('diet-cals').value = Math.round(cals);
@@ -516,7 +555,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('API 連線失敗，請稍後再試', 'error');
             html5QrcodeScanner.resume();
           }
-        }, (errorMessage) => { /* 忽略掃描背景錯誤 */ });
+        }, (errorMessage) => { /* 忽略背景掃描失敗 */ });
       } else {
         html5QrcodeScanner.resume();
       }
@@ -662,7 +701,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // --- 體態趨勢追蹤 (Body Composition Track) ---
+  // --- 體態趨勢追蹤 (含 TDEE 自動更新連動) ---
   const btnOpenBodyStats = document.querySelectorAll('#btn-open-bodystat');
   const btnCloseBodyStat = document.getElementById('btn-close-bodystat');
   const bodyStatModal = document.getElementById('bodystat-modal');
@@ -696,11 +735,20 @@ document.addEventListener('DOMContentLoaded', () => {
     hideLoading();
 
     if (res.success) {
-      showToast('體態紀錄成功！');
-      bodyStatModal.classList.add('hidden');
-      currentUser.weight = weight;
-      localStorage.setItem('nutriLens_user', JSON.stringify(currentUser));
-      loadBodyStats(); // 重新載入並繪製圖表
+      showToast('體態與 TDEE 已自動更新！');
+      document.getElementById('bodystat-modal').classList.add('hidden');
+      
+      // 接收後端算好的新 TDEE 與目標，直接更新 localStorage 與畫面
+      if (res.updatedUser) {
+          currentUser = res.updatedUser;
+          localStorage.setItem('nutriLens_user', JSON.stringify(currentUser));
+      } else {
+          currentUser.weight = weight;
+          localStorage.setItem('nutriLens_user', JSON.stringify(currentUser));
+      }
+      
+      loadBodyStats(); // 重新繪製體態雙 Y 軸圖表
+      loadDailyData(); // 重新載入首頁數據，讓 TDEE 進度條用新標準渲染
     } else {
       showToast(res.message, 'error');
     }

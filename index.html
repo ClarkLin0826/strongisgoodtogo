@@ -24,6 +24,7 @@
   <style>
     body {
       font-family: 'Inter', sans-serif;
+      /* 移除了寫死的 background-color，改由 Tailwind 控制 */
     }
 
     .hidden {
@@ -41,14 +42,15 @@
     }
 
     @keyframes spin {
-      0% {
-        transform: rotate(0deg);
-      }
-
-      100% {
-        transform: rotate(360deg);
-      }
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
+    
+    /* 滾動條美化 */
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+    .dark .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #475569; }
   </style>
 </head>
 
@@ -172,16 +174,17 @@
     </div>
 
     <div id="dashboard-view" class="hidden flex flex-col h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
+      
       <header class="bg-white dark:bg-slate-800 p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center sticky top-0 z-10 transition-colors">
-        <div>
+        <div class="shrink-0 mr-2">
           <h2 class="text-xl font-black text-indigo-600 dark:text-indigo-400">NutriLens</h2>
-          <div class="flex items-center gap-1 mt-0.5">
+          <div class="flex items-center gap-1 mt-0.5 whitespace-nowrap">
             <p id="user-greeting" class="text-xs text-slate-500 dark:text-gray-400 font-medium">Hi, User</p>
             <button id="btn-edit-profile" class="text-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300 cursor-pointer ml-1 text-xs">📝 編輯</button>
           </div>
         </div>
-        <div class="flex items-center gap-3">
-          <button id="theme-toggle" class="p-1.5 bg-slate-100 dark:bg-slate-700 rounded-full text-slate-500 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition">
+        <div class="flex items-center gap-2">
+          <button id="theme-toggle" class="p-1.5 bg-slate-100 dark:bg-slate-700 rounded-full text-slate-500 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition shrink-0">
             <svg id="theme-toggle-dark-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20">
               <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
             </svg>
@@ -189,15 +192,15 @@
               <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path>
             </svg>
           </button>
-          <input type="date" id="date-selector" class="text-xs border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded px-1 py-1 outline-none w-28">
-          <button id="btn-goal-settings" class="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-1 rounded hover:bg-emerald-100 transition whitespace-nowrap">⚙️ 目標</button>
-          <button id="btn-logout" class="text-xs text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300 whitespace-nowrap">登出</button>
+          <input type="date" id="date-selector" class="text-xs border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded px-1 py-1 outline-none w-[105px] shrink-0">
+          <button id="btn-goal-settings" class="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-1 rounded hover:bg-emerald-100 transition whitespace-nowrap shrink-0">⚙️ 目標</button>
+          <button id="btn-logout" class="text-xs text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300 whitespace-nowrap shrink-0">登出</button>
         </div>
       </header>
 
       <main class="flex-1 overflow-y-auto p-4 pb-24 space-y-6">
 
-        <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700 transition-colors">
           <div class="flex justify-between items-end mb-4">
             <div>
               <p class="text-xs font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider mb-1">剩餘熱量</p>
@@ -226,7 +229,7 @@
           </div>
         </div>
 
-        <div id="goal-progress-card" class="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-slate-800 dark:to-slate-800 rounded-xl p-4 shadow-sm border border-indigo-100 dark:border-slate-700 hidden">
+        <div id="goal-progress-card" class="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-slate-800 dark:to-slate-800 rounded-xl p-4 shadow-sm border border-indigo-100 dark:border-slate-700 hidden transition-colors">
           <div class="flex justify-between items-start mb-2">
             <div>
               <p class="text-sm font-bold text-indigo-800 dark:text-indigo-300" id="goal-progress-title">減脂 5kg (5個月)</p>
@@ -237,13 +240,13 @@
               <p class="text-lg font-black text-indigo-600 dark:text-indigo-400"><span id="goal-daily-deficit">0</span> <span class="text-xs font-bold">kcal</span></p>
             </div>
           </div>
-          <div class="bg-white/60 dark:bg-slate-900/50 p-2 rounded-lg mt-3 flex justify-between items-center">
+          <div class="bg-white/60 dark:bg-slate-900/50 p-2 rounded-lg mt-3 flex justify-between items-center transition-colors">
             <p class="text-xs font-medium text-slate-600 dark:text-gray-400">💪 今日實際達標：<strong class="text-emerald-600 dark:text-emerald-400" id="goal-today-achieved">0</strong> kcal</p>
             <p class="text-xs font-medium text-slate-600 dark:text-gray-400">剩餘總缺口：<strong class="text-rose-500 dark:text-rose-400" id="goal-total-remaining">0</strong></p>
           </div>
         </div>
 
-        <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-4 transition-colors">
           <div class="w-[45%] relative flex justify-center items-center">
             <canvas id="macroChart" class="w-full max-w-[120px] max-h-[120px]"></canvas>
             <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
@@ -254,7 +257,7 @@
           <div class="w-[55%] space-y-3">
             <div>
               <div class="flex justify-between items-end mb-1">
-                <p class="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span>蛋白質 (P)</p>
+                <p class="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span>蛋白質 (P)</p>
                 <p class="text-xs font-bold text-blue-600 dark:text-blue-400"><span id="macro-protein">0</span>g</p>
               </div>
               <div class="h-1.5 w-full bg-slate-50 dark:bg-slate-700 rounded-full overflow-hidden border border-slate-100 dark:border-slate-600">
@@ -263,7 +266,7 @@
             </div>
             <div>
               <div class="flex justify-between items-end mb-1">
-                <p class="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span>碳水 (C)</p>
+                <p class="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span>碳水 (C)</p>
                 <p class="text-xs font-bold text-amber-600 dark:text-amber-400"><span id="macro-carbs">0</span>g</p>
               </div>
               <div class="h-1.5 w-full bg-slate-50 dark:bg-slate-700 rounded-full overflow-hidden border border-slate-100 dark:border-slate-600">
@@ -272,7 +275,7 @@
             </div>
             <div>
               <div class="flex justify-between items-end mb-1">
-                <p class="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500"></span>脂肪 (F)</p>
+                <p class="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500"></span>脂肪 (F)</p>
                 <p class="text-xs font-bold text-rose-600 dark:text-rose-400"><span id="macro-fat">0</span>g</p>
               </div>
               <div class="h-1.5 w-full bg-slate-50 dark:bg-slate-700 rounded-full overflow-hidden border border-slate-100 dark:border-slate-600">
@@ -282,7 +285,7 @@
           </div>
         </div>
 
-        <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-700">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-700 transition-colors">
           <div class="flex justify-between items-center mb-3">
             <h3 class="font-bold text-slate-800 dark:text-gray-100 text-sm">📉 近 30 日體態趨勢</h3>
             <button id="btn-open-bodystat" class="text-xs bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-2 py-1 rounded font-bold hover:bg-indigo-100 transition">記錄今日體態</button>
@@ -292,7 +295,7 @@
           </div>
         </div>
 
-        <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-700">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-700 transition-colors">
           <h3 class="font-bold text-slate-800 dark:text-gray-100 text-sm mb-3">📈 近七日淨熱量趨勢</h3>
           <div class="w-full h-40">
             <canvas id="weeklyChart"></canvas>
@@ -333,7 +336,7 @@
               <input type="number" id="bodystat-fat" step="0.1" required placeholder="例如: 20.5" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm outline-none focus:border-indigo-500">
             </div>
           </div>
-          <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl mt-4 shadow-lg hover:bg-indigo-700 transition">儲存體態紀錄</button>
+          <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl mt-4 shadow-lg hover:bg-indigo-700 transition">儲存並重算 TDEE</button>
         </form>
       </div>
     </div>
@@ -425,7 +428,7 @@
 
         <div id="scanner-container" class="hidden mb-4 border-2 border-dashed border-indigo-300 dark:border-indigo-600 rounded-xl overflow-hidden relative bg-slate-50 dark:bg-slate-900">
           <div class="absolute top-2 right-2 z-10">
-            <button type="button" id="btn-close-scanner" class="bg-white/90 dark:bg-slate-700 text-slate-800 dark:text-white rounded-full w-8 h-8 flex items-center justify-center font-bold shadow-sm">✕</button>
+            <button type="button" id="btn-close-scanner" class="bg-white/90 dark:bg-slate-700 text-slate-800 dark:text-white rounded-full w-8 h-8 flex items-center justify-center font-bold shadow-sm hover:bg-slate-200">✕</button>
           </div>
           <div id="reader" class="w-full"></div>
         </div>
@@ -506,7 +509,7 @@
 
           <div id="diet-cart-container" class="mt-4 border-t border-slate-200 dark:border-slate-700 pt-4 hidden">
             <h3 class="text-xs font-bold text-slate-700 dark:text-gray-300 mb-2">🛒 待儲存清單 (<span id="diet-cart-count">0</span>)</h3>
-            <ul id="diet-cart-list" class="space-y-2 mb-4 max-h-32 overflow-y-auto"></ul>
+            <ul id="diet-cart-list" class="space-y-2 mb-4 max-h-32 overflow-y-auto custom-scrollbar"></ul>
             <button type="button" id="btn-submit-diet-cart" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-indigo-700 transition">✅ 儲存全部紀錄</button>
           </div>
         </form>
