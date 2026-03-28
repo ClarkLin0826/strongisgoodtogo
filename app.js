@@ -80,22 +80,21 @@ function showToast(message, type = 'success') {
   }, 3000);
 }
 
-// 動態更新 Chart.js 主題 (已優化防呆)
+// 動態更新 Chart.js 主題 (安全防呆版本)
 function updateChartTheme(isDark) {
-  const textColor = isDark ? '#e5e7eb' : '#475569'; 
-  const gridColor = isDark ? '#334155' : '#f1f5f9';
-
-  if (window.Chart && Chart.defaults) {
-    Chart.defaults.color = textColor;
-    if (Chart.defaults.scale && Chart.defaults.scale.grid) {
-      Chart.defaults.scale.grid.color = gridColor;
-      Chart.defaults.scale.grid.borderColor = gridColor;
+  try {
+    const textColor = isDark ? '#e5e7eb' : '#475569'; 
+    const gridColor = isDark ? '#334155' : '#f1f5f9';
+    if (window.Chart) {
+      Chart.defaults.color = textColor;
+      Chart.defaults.borderColor = gridColor;
     }
+    if (window.weeklyChartInstance) window.weeklyChartInstance.update();
+    if (window.bodyStatsChartInstance) window.bodyStatsChartInstance.update();
+    if (window.macrosChartInstance) window.macrosChartInstance.update();
+  } catch(e) {
+    console.error('Theme update error ignored:', e);
   }
-  
-  if (window.weeklyChartInstance) window.weeklyChartInstance.update();
-  if (window.bodyStatsChartInstance) window.bodyStatsChartInstance.update();
-  if (window.macrosChartInstance) window.macrosChartInstance.update();
 }
 
 // ==========================================
@@ -103,7 +102,6 @@ function updateChartTheme(isDark) {
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
 
-  // --- 0. 深色模式控制 ---
   const themeToggleBtn = document.getElementById('theme-toggle');
   const darkIcon = document.getElementById('theme-toggle-dark-icon');
   const lightIcon = document.getElementById('theme-toggle-light-icon');
@@ -135,7 +133,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- 0.5 檢查重設密碼 Token ---
   const urlParams = new URLSearchParams(window.location.search);
   const resetEmail = urlParams.get('email');
   const resetToken = urlParams.get('token');
@@ -165,7 +162,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // --- Auth 切換邏輯 ---
   document.getElementById('go-to-register').addEventListener('click', (e) => {
     e.preventDefault();
     document.getElementById('login-form').classList.add('hidden');
@@ -189,7 +185,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('login-form').classList.remove('hidden');
   });
 
-  // --- 帳號登入與註冊 API ---
   document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     showLoading('登入中...');
@@ -239,7 +234,6 @@ document.addEventListener('DOMContentLoaded', () => {
     showView('auth-view');
   });
 
-  // --- 忘記密碼 ---
   document.getElementById('forgot-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     showLoading('寄發密碼重設信件中...');
@@ -271,10 +265,8 @@ document.addEventListener('DOMContentLoaded', () => {
     } else { showToast(res.message, 'error'); }
   });
 
-  // --- 日期切換 ---
   document.getElementById('date-selector').addEventListener('change', loadDailyData);
 
-  // --- Modal 開關控制 ---
   document.getElementById('btn-open-diet').addEventListener('click', () => {
     document.getElementById('diet-modal').classList.remove('hidden');
     resetDietFormValues(false, true);
@@ -294,7 +286,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('exercise-modal').classList.add('hidden');
   });
 
-  // --- 運動計算邏輯 ---
   document.getElementById('tab-ex-calc').addEventListener('click', (e) => {
     document.getElementById('exercise-mode').value = 'calc';
     e.target.classList.replace('text-slate-500', 'text-emerald-600');
@@ -343,7 +334,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('exercise-preset').addEventListener('change', calculateExerciseCals);
   document.getElementById('exercise-duration').addEventListener('input', calculateExerciseCals);
 
-  // --- 飲食連動與算式 ---
   document.getElementById('diet-category').addEventListener('change', (e) => {
     const prefix = e.target.value;
     const foodSelect = document.getElementById('diet-food');
@@ -436,7 +426,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // --- 全域食物搜尋 ---
   const searchInput = document.getElementById('diet-global-search');
   const searchResults = document.getElementById('diet-search-results');
   searchInput.addEventListener('input', (e) => {
@@ -487,7 +476,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // --- 掃碼辨識食品 ---
   let html5QrcodeScanner = null;
   const btnOpenScanner = document.getElementById('btn-open-scanner');
   const btnCloseScanner = document.getElementById('btn-close-scanner');
@@ -547,7 +535,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- 購物車與紀錄存取 ---
   window.renderDietCart = function () {
     const list = document.getElementById('diet-cart-list');
     const container = document.getElementById('diet-cart-container');
@@ -679,7 +666,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // --- 體態趨勢追蹤 ---
   const btnOpenBodyStats = document.querySelectorAll('#btn-open-bodystat');
   const btnCloseBodyStat = document.getElementById('btn-close-bodystat');
   const bodyStatModal = document.getElementById('bodystat-modal');
@@ -728,14 +714,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // --- 目標設定 Modal 控制 ---
+  // ▼ 修正：變更目標 Modal 讀取記憶邏輯 ▼
   document.getElementById('btn-goal-settings').addEventListener('click', () => {
-    document.getElementById('goal-mode').value = 'maintain';
-    document.getElementById('goal-details-container').classList.add('hidden');
-    document.getElementById('goal-kg').value = '';
-    document.getElementById('goal-months').value = '';
+    const goalStr = String(currentUser.goal || '');
+    const match = goalStr.match(/(減脂|增肌)\s*([\d\.]+)kg/);
+    
+    if (match) {
+      document.getElementById('goal-mode').value = match[1] === '減脂' ? 'lose' : 'gain';
+      document.getElementById('goal-details-container').classList.remove('hidden');
+      const detailMatch = goalStr.match(/([\d\.]+)kg\s*\(([\d\.]+)個月\)/);
+      document.getElementById('goal-kg').value = detailMatch ? detailMatch[1] : '';
+      document.getElementById('goal-months').value = detailMatch ? detailMatch[2] : '';
+    } else {
+      document.getElementById('goal-mode').value = 'maintain';
+      document.getElementById('goal-details-container').classList.add('hidden');
+      document.getElementById('goal-kg').value = '';
+      document.getElementById('goal-months').value = '';
+    }
     document.getElementById('goal-modal').classList.remove('hidden');
   });
+
   document.getElementById('btn-close-goal').addEventListener('click', () => {
     document.getElementById('goal-modal').classList.add('hidden');
   });
@@ -771,7 +769,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // --- 個人資料編輯 ---
   document.getElementById('btn-edit-profile').addEventListener('click', () => {
     document.getElementById('edit-age').value = currentUser.age || '';
     document.getElementById('edit-gender').value = currentUser.gender || 'male';
@@ -805,7 +802,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // --- AI Modal 控制 ---
   document.getElementById('btn-close-ai').addEventListener('click', () => {
     document.getElementById('ai-modal').classList.add('hidden');
     document.getElementById('ai-image-input').value = '';
@@ -891,7 +887,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 });
 
-// --- 全局刪除紀錄 ---
 window.showConfirmModal = function(message, onConfirmCallback) {
   const modal = document.getElementById('confirm-modal');
   const box = document.getElementById('confirm-box');
@@ -934,9 +929,6 @@ window.deleteLogEntry = function (logId, logType) {
   });
 };
 
-// ==========================================
-// Dashboard 資料載入與圖表渲染
-// ==========================================
 function initDashboard() {
   showView('dashboard-view');
   document.getElementById('user-greeting').innerText = `Hi, ${currentUser.username || currentUser.email.split('@')[0]}`;
@@ -972,7 +964,7 @@ async function loadBodyStats() {
   if (res.success) renderBodyStatsChart(res.stats);
 }
 
-// 圖表防呆修正版本
+// ▼ 修正：圖表防呆版本，修補數值為非數字的情況 ▼
 function renderBodyStatsChart(stats) {
   const ctx = document.getElementById('bodyStatsChart');
   if (!ctx) return;
@@ -985,8 +977,8 @@ function renderBodyStatsChart(stats) {
     return `${d.getMonth() + 1}/${d.getDate()}`;
   });
   
-  const weights = stats.map(s => s.weight);
-  const fats = stats.map(s => s.body_fat);
+  const weights = stats.map(s => Number(s.weight) || 0);
+  const fats = stats.map(s => Number(s.body_fat) || 0);
 
   if (stats.length === 1) {
     labels.push(labels[0]);
