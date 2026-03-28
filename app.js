@@ -1,7 +1,7 @@
 // ==========================================
 // 全域設定與狀態
 // ==========================================
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzj7n9sOar-So8_Yy-7gwr5EokeqoDRJFzjWOMxBfn--AtgcERVapjitNureZF-2sYx/exec';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycby5G_JZEclO6bTx7z3Do4nk18RyTQ1QNE07_XrjQb16UgQjq__CP5SXdVLNhcLpm7hxJw/exec';
 
 let currentUser = null;
 const tzOffset = (new Date()).getTimezoneOffset() * 60000;
