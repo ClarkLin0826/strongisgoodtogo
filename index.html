@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NutriLens - 熱量與營養素追蹤</title>
+  
   <script>
     tailwind = {
       config: {
@@ -22,16 +23,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="https://img.icons8.com/color/192/vegetarian-food.png">
   <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      /* 移除了寫死的 background-color，改由 Tailwind 控制 */
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    /* Loading 動畫 */
+    body { font-family: 'Inter', sans-serif; }
+    .hidden { display: none !important; }
     .loader {
       border: 4px solid #f3f3f3;
       border-top: 4px solid #4f46e5;
@@ -40,13 +33,10 @@
       height: 40px;
       animation: spin 1s linear infinite;
     }
-
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-    
-    /* 滾動條美化 */
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
@@ -72,19 +62,16 @@
       <form id="login-form" class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">帳號 (Username)</label>
-          <input type="text" id="login-username" required
-            class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
+          <input type="text" id="login-username" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
         </div>
         <div>
           <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">密碼</label>
-          <input type="password" id="login-password" required
-            class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
+          <input type="password" id="login-password" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
           <div class="text-right mt-1">
             <a href="#" id="go-to-forgot" class="text-xs text-indigo-500 dark:text-indigo-400 hover:underline">忘記密碼？</a>
           </div>
         </div>
-        <button type="submit"
-          class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition shadow-lg shadow-indigo-500/30">登入</button>
+        <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition shadow-lg shadow-indigo-500/30">登入</button>
         <p class="text-center text-sm text-slate-500 dark:text-gray-400 mt-4">
           還沒有帳號？ <a href="#" id="go-to-register" class="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">立即註冊</a>
         </p>
@@ -97,11 +84,9 @@
         </div>
         <div>
           <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">註冊 Email</label>
-          <input type="email" id="forgot-email" required
-            class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
+          <input type="email" id="forgot-email" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
-        <button type="submit"
-          class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition shadow-lg shadow-indigo-500/30">發送重設信件</button>
+        <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition shadow-lg shadow-indigo-500/30">發送重設信件</button>
         <p class="text-center text-sm text-slate-500 dark:text-gray-400 mt-4">
           <a href="#" id="go-to-login-from-forgot" class="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">返回登入</a>
         </p>
@@ -116,49 +101,47 @@
         <input type="hidden" id="reset-token-temp">
         <div>
           <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">新密碼</label>
-          <input type="password" id="reset-new-password" required
-            class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
+          <input type="password" id="reset-new-password" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
-        <button type="submit"
-          class="w-full bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-700 transition shadow-lg shadow-emerald-500/30">更新密碼</button>
+        <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-700 transition shadow-lg shadow-emerald-500/30">更新密碼</button>
       </form>
 
       <form id="register-form" class="space-y-4 hidden max-h-[85vh] overflow-y-auto overflow-x-hidden p-1 custom-scrollbar">
         <div class="grid grid-cols-2 gap-4">
           <div class="col-span-2">
             <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">自訂帳號 (Username)</label>
-            <input type="text" id="reg-username" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 rounded-lg outline-none">
+            <input type="text" id="reg-username" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg outline-none">
           </div>
           <div class="col-span-2">
             <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">聯絡 Email</label>
-            <input type="email" id="reg-email" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 rounded-lg outline-none">
+            <input type="email" id="reg-email" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg outline-none">
           </div>
           <div class="col-span-2">
             <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">密碼</label>
-            <input type="password" id="reg-password" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 rounded-lg outline-none">
+            <input type="password" id="reg-password" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg outline-none">
           </div>
           <div>
             <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">性別</label>
-            <select id="reg-gender" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 rounded-lg outline-none">
+            <select id="reg-gender" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg outline-none">
               <option value="male">男性</option>
               <option value="female">女性</option>
             </select>
           </div>
           <div>
             <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">年齡</label>
-            <input type="number" id="reg-age" required min="10" max="120" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 rounded-lg outline-none">
+            <input type="number" id="reg-age" required min="10" max="120" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg outline-none">
           </div>
           <div>
             <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">身高 (cm)</label>
-            <input type="number" id="reg-height" required min="100" max="250" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 rounded-lg outline-none">
+            <input type="number" id="reg-height" required min="100" max="250" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg outline-none">
           </div>
           <div>
             <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">體重 (kg)</label>
-            <input type="number" id="reg-weight" required min="30" max="200" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 rounded-lg outline-none">
+            <input type="number" id="reg-weight" required min="30" max="200" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg outline-none">
           </div>
           <div class="col-span-2">
             <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">活動量</label>
-            <select id="reg-activity" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 rounded-lg outline-none">
+            <select id="reg-activity" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg outline-none">
               <option value="1.2">久坐 (幾乎不運動)</option>
               <option value="1.375">輕度活動 (每週運動 1-3 天)</option>
               <option value="1.55">中度活動 (每週運動 3-5 天)</option>
@@ -336,7 +319,7 @@
               <input type="number" id="bodystat-fat" step="0.1" required placeholder="例如: 20.5" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm outline-none focus:border-indigo-500">
             </div>
           </div>
-          <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl mt-4 shadow-lg hover:bg-indigo-700 transition">儲存並重算 TDEE</button>
+          <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl mt-4 shadow-lg hover:bg-indigo-700 transition">儲存並更新 TDEE</button>
         </form>
       </div>
     </div>
@@ -447,8 +430,7 @@
 
             <div class="col-span-2 relative">
               <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">🔍 關鍵字搜尋</label>
-              <input type="text" id="diet-global-search" placeholder="輸入食物名稱 (例如: 雞排)..." autocomplete="off"
-                class="w-full px-3 py-2 border border-indigo-300 dark:border-indigo-600 bg-indigo-50/30 dark:bg-slate-700 dark:text-white rounded-lg text-sm outline-none focus:border-indigo-500 transition-colors">
+              <input type="text" id="diet-global-search" placeholder="輸入食物名稱 (例如: 雞排)..." autocomplete="off" class="w-full px-3 py-2 border border-indigo-300 dark:border-indigo-600 bg-indigo-50/30 dark:bg-slate-700 dark:text-white rounded-lg text-sm outline-none focus:border-indigo-500 transition-colors">
               <div id="diet-search-results" class="absolute z-20 w-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 mt-1 rounded-lg shadow-xl max-h-60 overflow-y-auto hidden"></div>
             </div>
 

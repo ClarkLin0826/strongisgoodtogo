@@ -1,6 +1,7 @@
 // ==========================================
 // 全域設定與狀態
 // ==========================================
+// 請換成你自己的 GAS Web App URL
 const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzj7n9sOar-So8_Yy-7gwr5EokeqoDRJFzjWOMxBfn--AtgcERVapjitNureZF-2sYx/exec';
 
 let currentUser = null;
@@ -80,14 +81,18 @@ function showToast(message, type = 'success') {
   }, 3000);
 }
 
-// 動態更新 Chart.js 主題
+// 動態更新 Chart.js 主題 (已優化防呆)
 function updateChartTheme(isDark) {
   const textColor = isDark ? '#e5e7eb' : '#475569'; 
   const gridColor = isDark ? '#334155' : '#f1f5f9';
 
-  Chart.defaults.color = textColor;
-  Chart.defaults.scale.grid.color = gridColor;
-  Chart.defaults.scale.grid.borderColor = gridColor;
+  if (window.Chart && Chart.defaults) {
+    Chart.defaults.color = textColor;
+    if (Chart.defaults.scale && Chart.defaults.scale.grid) {
+      Chart.defaults.scale.grid.color = gridColor;
+      Chart.defaults.scale.grid.borderColor = gridColor;
+    }
+  }
   
   if (window.weeklyChartInstance) window.weeklyChartInstance.update();
   if (window.bodyStatsChartInstance) window.bodyStatsChartInstance.update();
@@ -168,20 +173,17 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('forgot-form').classList.add('hidden');
     document.getElementById('register-form').classList.remove('hidden');
   });
-
   document.getElementById('go-to-login').addEventListener('click', (e) => {
     e.preventDefault();
     document.getElementById('register-form').classList.add('hidden');
     document.getElementById('forgot-form').classList.add('hidden');
     document.getElementById('login-form').classList.remove('hidden');
   });
-
   document.getElementById('go-to-forgot').addEventListener('click', (e) => {
     e.preventDefault();
     document.getElementById('login-form').classList.add('hidden');
     document.getElementById('forgot-form').classList.remove('hidden');
   });
-
   document.getElementById('go-to-login-from-forgot').addEventListener('click', (e) => {
     e.preventDefault();
     document.getElementById('forgot-form').classList.add('hidden');
@@ -192,10 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     showLoading('登入中...');
-    const res = await apiCall('login', { 
-      username: document.getElementById('login-username').value, 
-      password: document.getElementById('login-password').value 
-    });
+    const res = await apiCall('login', { username: document.getElementById('login-username').value, password: document.getElementById('login-password').value });
     hideLoading();
     if (res.success) {
       currentUser = res.user;
@@ -203,9 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.setItem('nutriLens_time', new Date().getTime().toString());
       initDashboard();
       showToast(`歡迎回來，${currentUser.username || currentUser.email.split('@')[0]}！`);
-    } else {
-      showToast(res.message, 'error');
-    }
+    } else { showToast(res.message, 'error'); }
   });
 
   document.getElementById('register-form').addEventListener('submit', async (e) => {
@@ -229,9 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.setItem('nutriLens_user', JSON.stringify(currentUser));
       localStorage.setItem('nutriLens_time', new Date().getTime().toString());
       initDashboard();
-    } else {
-      showToast(res.message, 'error');
-    }
+    } else { showToast(res.message, 'error'); }
   });
 
   document.getElementById('btn-logout').addEventListener('click', () => {
@@ -245,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
     showView('auth-view');
   });
 
-  // --- 忘記密碼邏輯 ---
+  // --- 忘記密碼 ---
   document.getElementById('forgot-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     showLoading('寄發密碼重設信件中...');
@@ -258,9 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('forgot-form').classList.add('hidden');
       document.getElementById('login-form').classList.remove('hidden');
       document.getElementById('forgot-form').reset();
-    } else {
-      showToast(res.message, 'error');
-    }
+    } else { showToast(res.message, 'error'); }
   });
 
   document.getElementById('reset-new-password-form').addEventListener('submit', async (e) => {
@@ -276,9 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('reset-new-password-form').classList.add('hidden');
       document.getElementById('login-form').classList.remove('hidden');
       document.getElementById('reset-new-password-form').reset();
-    } else {
-      showToast(res.message, 'error');
-    }
+    } else { showToast(res.message, 'error'); }
   });
 
   // --- 日期切換 ---
@@ -497,7 +488,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // --- 掃碼辨識食品 (Barcode Open Scanner) ---
+  // --- 掃碼辨識食品 ---
   let html5QrcodeScanner = null;
   const btnOpenScanner = document.getElementById('btn-open-scanner');
   const btnCloseScanner = document.getElementById('btn-close-scanner');
@@ -506,43 +497,31 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnOpenScanner && scannerContainer) {
     btnOpenScanner.addEventListener('click', () => {
       scannerContainer.classList.remove('hidden');
-      
       if (!html5QrcodeScanner) {
         html5QrcodeScanner = new Html5QrcodeScanner(
-          "reader", 
-          { fps: 10, qrbox: { width: 250, height: 150 }, aspectRatio: 1.0 }, 
-          false
+          "reader", { fps: 10, qrbox: { width: 250, height: 150 }, aspectRatio: 1.0 }, false
         );
-        
         html5QrcodeScanner.render(async (decodedText, decodedResult) => {
           html5QrcodeScanner.pause(true); 
           showLoading('正在從食品資料庫抓取營養素...');
-          
           try {
             const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${decodedText}.json`);
             const data = await response.json();
             hideLoading();
-
             if (data.status === 1 && data.product && data.product.nutriments) {
               const product = data.product;
               const nutriments = product.nutriments;
-
-              const catSelect = document.getElementById('diet-category');
-              catSelect.value = 'custom';
-              catSelect.dispatchEvent(new Event('change'));
-
+              document.getElementById('diet-category').value = 'custom';
+              document.getElementById('diet-category').dispatchEvent(new Event('change'));
               const productName = product.product_name_zh || product.product_name || '掃描商品';
               document.getElementById('diet-name').value = productName;
-
               const cals = nutriments['energy-kcal_100g'] || (nutriments['energy_100g'] ? nutriments['energy_100g'] / 4.184 : 0);
-              
               document.getElementById('diet-amount-input').value = 100;
               document.getElementById('diet-unit-label').innerText = 'g';
               document.getElementById('diet-cals').value = Math.round(cals);
               document.getElementById('diet-pro').value = Number(nutriments['proteins_100g'] || 0).toFixed(1);
               document.getElementById('diet-carb').value = Number(nutriments['carbohydrates_100g'] || 0).toFixed(1);
               document.getElementById('diet-fat').value = Number(nutriments['fat_100g'] || 0).toFixed(1);
-
               showToast(`✅ 成功載入：${productName}`);
               scannerContainer.classList.add('hidden'); 
               html5QrcodeScanner.resume(); 
@@ -701,7 +680,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // --- 體態趨勢追蹤 (含 TDEE 自動更新連動) ---
+  // --- 體態趨勢追蹤 (含自動重新載入 TDEE) ---
   const btnOpenBodyStats = document.querySelectorAll('#btn-open-bodystat');
   const btnCloseBodyStat = document.getElementById('btn-close-bodystat');
   const bodyStatModal = document.getElementById('bodystat-modal');
@@ -735,26 +714,25 @@ document.addEventListener('DOMContentLoaded', () => {
     hideLoading();
 
     if (res.success) {
-      showToast('體態與 TDEE 已自動更新！');
+      showToast('體態已更新！');
       document.getElementById('bodystat-modal').classList.add('hidden');
       
-      // 接收後端算好的新 TDEE 與目標，直接更新 localStorage 與畫面
+      // 更新目前使用者的 TDEE 等參數
       if (res.updatedUser) {
           currentUser = res.updatedUser;
-          localStorage.setItem('nutriLens_user', JSON.stringify(currentUser));
       } else {
           currentUser.weight = weight;
-          localStorage.setItem('nutriLens_user', JSON.stringify(currentUser));
       }
+      localStorage.setItem('nutriLens_user', JSON.stringify(currentUser));
       
-      loadBodyStats(); // 重新繪製體態雙 Y 軸圖表
-      loadDailyData(); // 重新載入首頁數據，讓 TDEE 進度條用新標準渲染
+      loadBodyStats(); 
+      loadDailyData(); 
     } else {
       showToast(res.message, 'error');
     }
   });
 
-  // --- 目標設定 Modal 控制 ---
+  // --- 目標設定 Modal ---
   document.getElementById('btn-goal-settings').addEventListener('click', () => {
     document.getElementById('goal-mode').value = 'maintain';
     document.getElementById('goal-details-container').classList.add('hidden');
@@ -831,7 +809,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // --- AI Modal 控制 ---
+  // --- AI Modal ---
   document.getElementById('btn-close-ai').addEventListener('click', () => {
     document.getElementById('ai-modal').classList.add('hidden');
     document.getElementById('ai-image-input').value = '';
@@ -998,38 +976,56 @@ async function loadBodyStats() {
   if (res.success) renderBodyStatsChart(res.stats);
 }
 
+// 已修復單點資料畫不出圖表的問題 (pointRadius 強制顯示)
 function renderBodyStatsChart(stats) {
   const ctx = document.getElementById('bodyStatsChart');
   if (!ctx) return;
   if (window.bodyStatsChartInstance) window.bodyStatsChartInstance.destroy();
 
+  // 確保依照日期從小到大排序
+  stats.sort((a, b) => new Date(a.date) - new Date(b.date));
+
   const labels = stats.map(s => {
     const d = new Date(s.date);
     return `${d.getMonth() + 1}/${d.getDate()}`;
   });
+  
+  const weights = stats.map(s => s.weight);
+  const fats = stats.map(s => s.body_fat);
+
+  // 防呆：如果只有一筆資料，複製一個點讓它畫成水平線
+  if (stats.length === 1) {
+    labels.push(labels[0]);
+    weights.push(weights[0]);
+    fats.push(fats[0]);
+  }
 
   window.bodyStatsChartInstance = new Chart(ctx.getContext('2d'), {
     type: 'line',
     data: {
-      labels: labels,
+      labels: labels.length > 0 ? labels : ['無資料'],
       datasets: [
         {
           label: '體重 (kg)',
-          data: stats.map(s => s.weight),
+          data: weights.length > 0 ? weights : [0],
           borderColor: '#6366f1',
           backgroundColor: '#6366f120',
           yAxisID: 'y',
           tension: 0.3,
-          fill: true
+          fill: true,
+          pointRadius: 4, 
+          pointBackgroundColor: '#6366f1'
         },
         {
           label: '體脂率 (%)',
-          data: stats.map(s => s.body_fat),
+          data: fats.length > 0 ? fats : [0],
           borderColor: '#f43f5e',
           backgroundColor: 'transparent',
           yAxisID: 'y1',
           tension: 0.3,
-          borderDash: [5, 5]
+          borderDash: [5, 5],
+          pointRadius: 4,
+          pointBackgroundColor: '#f43f5e'
         }
       ]
     },
