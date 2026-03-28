@@ -80,18 +80,40 @@ function showToast(message, type = 'success') {
   }, 3000);
 }
 
-// 動態更新 Chart.js 主題 (安全防呆版本)
+// 動態更新 Chart.js 主題 (深度強迫渲染版)
 function updateChartTheme(isDark) {
   try {
     const textColor = isDark ? '#e5e7eb' : '#475569'; 
     const gridColor = isDark ? '#334155' : '#f1f5f9';
+    
     if (window.Chart) {
       Chart.defaults.color = textColor;
       Chart.defaults.borderColor = gridColor;
     }
-    if (window.weeklyChartInstance) window.weeklyChartInstance.update();
-    if (window.bodyStatsChartInstance) window.bodyStatsChartInstance.update();
+
+    // 專門針對已經存在的圖表做深度軸線更新
+    const forceUpdateInstance = (chart) => {
+      if (chart && chart.options && chart.options.scales) {
+        if (chart.options.scales.x) {
+           if (chart.options.scales.x.ticks) chart.options.scales.x.ticks.color = textColor;
+           if (chart.options.scales.x.grid) chart.options.scales.x.grid.color = gridColor;
+        }
+        if (chart.options.scales.y) {
+           if (chart.options.scales.y.ticks) chart.options.scales.y.ticks.color = textColor;
+           if (chart.options.scales.y.grid) chart.options.scales.y.grid.color = gridColor;
+        }
+        if (chart.options.scales.y1) {
+           if (chart.options.scales.y1.ticks) chart.options.scales.y1.ticks.color = textColor;
+           if (chart.options.scales.y1.grid) chart.options.scales.y1.grid.color = gridColor;
+        }
+        chart.update();
+      }
+    };
+
+    forceUpdateInstance(window.weeklyChartInstance);
+    forceUpdateInstance(window.bodyStatsChartInstance);
     if (window.macrosChartInstance) window.macrosChartInstance.update();
+    
   } catch(e) {
     console.error('Theme update error ignored:', e);
   }
