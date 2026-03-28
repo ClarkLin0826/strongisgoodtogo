@@ -1,7 +1,6 @@
 // ==========================================
 // 全域設定與狀態
 // ==========================================
-// 請換成你自己的 GAS Web App URL
 const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzj7n9sOar-So8_Yy-7gwr5EokeqoDRJFzjWOMxBfn--AtgcERVapjitNureZF-2sYx/exec';
 
 let currentUser = null;
@@ -249,7 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const res = await apiCall('forgotPassword', { email, baseUrl });
     hideLoading();
     if (res.success) {
-      showToast('密碼重設信件包含認證連結已發送至您的信箱，請至信箱點擊連結更改密碼！');
+      showToast('密碼重設信件已發送至您的信箱！');
       document.getElementById('forgot-form').classList.add('hidden');
       document.getElementById('login-form').classList.remove('hidden');
       document.getElementById('forgot-form').reset();
@@ -526,15 +525,15 @@ document.addEventListener('DOMContentLoaded', () => {
               scannerContainer.classList.add('hidden'); 
               html5QrcodeScanner.resume(); 
             } else {
-              showToast('資料庫找不到此商品，請確認是否為市售包裝食品', 'error');
+              showToast('資料庫找不到此商品，請手動輸入', 'error');
               html5QrcodeScanner.resume();
             }
           } catch (err) {
             hideLoading();
-            showToast('API 連線失敗，請稍後再試', 'error');
+            showToast('API 連線失敗', 'error');
             html5QrcodeScanner.resume();
           }
-        }, (errorMessage) => { /* 忽略背景掃描失敗 */ });
+        }, (errorMessage) => {});
       } else {
         html5QrcodeScanner.resume();
       }
@@ -680,7 +679,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // --- 體態趨勢追蹤 (含自動重新載入 TDEE) ---
+  // --- 體態趨勢追蹤 ---
   const btnOpenBodyStats = document.querySelectorAll('#btn-open-bodystat');
   const btnCloseBodyStat = document.getElementById('btn-close-bodystat');
   const bodyStatModal = document.getElementById('bodystat-modal');
@@ -714,17 +713,14 @@ document.addEventListener('DOMContentLoaded', () => {
     hideLoading();
 
     if (res.success) {
-      showToast('體態已更新！');
+      showToast('體態與 TDEE 已更新！');
       document.getElementById('bodystat-modal').classList.add('hidden');
-      
-      // 更新目前使用者的 TDEE 等參數
       if (res.updatedUser) {
           currentUser = res.updatedUser;
       } else {
           currentUser.weight = weight;
       }
       localStorage.setItem('nutriLens_user', JSON.stringify(currentUser));
-      
       loadBodyStats(); 
       loadDailyData(); 
     } else {
@@ -732,7 +728,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // --- 目標設定 Modal ---
+  // --- 目標設定 Modal 控制 ---
   document.getElementById('btn-goal-settings').addEventListener('click', () => {
     document.getElementById('goal-mode').value = 'maintain';
     document.getElementById('goal-details-container').classList.add('hidden');
@@ -809,7 +805,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // --- AI Modal ---
+  // --- AI Modal 控制 ---
   document.getElementById('btn-close-ai').addEventListener('click', () => {
     document.getElementById('ai-modal').classList.add('hidden');
     document.getElementById('ai-image-input').value = '';
@@ -976,13 +972,12 @@ async function loadBodyStats() {
   if (res.success) renderBodyStatsChart(res.stats);
 }
 
-// 已修復單點資料畫不出圖表的問題 (pointRadius 強制顯示)
+// 圖表防呆修正版本
 function renderBodyStatsChart(stats) {
   const ctx = document.getElementById('bodyStatsChart');
   if (!ctx) return;
   if (window.bodyStatsChartInstance) window.bodyStatsChartInstance.destroy();
 
-  // 確保依照日期從小到大排序
   stats.sort((a, b) => new Date(a.date) - new Date(b.date));
 
   const labels = stats.map(s => {
@@ -993,7 +988,6 @@ function renderBodyStatsChart(stats) {
   const weights = stats.map(s => s.weight);
   const fats = stats.map(s => s.body_fat);
 
-  // 防呆：如果只有一筆資料，複製一個點讓它畫成水平線
   if (stats.length === 1) {
     labels.push(labels[0]);
     weights.push(weights[0]);
