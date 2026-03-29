@@ -158,7 +158,6 @@ window.loadDailyDataSilent = async function() {
   }
 };
 
-// 統一管理刪除紀錄的 Modal
 window.showConfirmModal = function(message, onConfirmCallback) {
   const modal = document.getElementById('confirm-modal');
   const box = document.getElementById('confirm-box');
@@ -195,7 +194,6 @@ window.showConfirmModal = function(message, onConfirmCallback) {
   });
 };
 
-// 統一管理全域的刪除功能
 window.deleteLogEntry = function (logId, logType) {
   window.showConfirmModal('確定要刪除這筆紀錄嗎？(雲端紀錄也會同步刪除)', () => {
     
@@ -232,12 +230,21 @@ window.renderDietCart = function () {
 
   dietCart.forEach((item, index) => {
     const mealLabel = { 'Breakfast': '早餐', 'Lunch': '午餐', 'Dinner': '晚餐', 'Snack': '點心' }[item.mealType] || item.mealType;
+    
+    // ▼ 修正：依據不同掃描類型顯示對應標籤 ▼
+    let badgeHtml = '';
+    if (item.isAiScanned === 'ai' || item.isAiScanned === 'true' || item.isAiScanned === true || item.isAiScanned === 'TRUE') {
+       badgeHtml = `<span class="text-[9px] font-bold bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 px-1.5 py-0.5 rounded ml-1 border border-pink-200 dark:border-pink-800/50">✨ AI</span>`;
+    } else if (item.isAiScanned === 'barcode') {
+       badgeHtml = `<span class="text-[9px] font-bold bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded ml-1 border border-indigo-200 dark:border-indigo-800/50">🔍 掃碼</span>`;
+    }
+
     list.innerHTML += `
       <li class="flex justify-between items-center bg-slate-50 dark:bg-slate-700 p-2 rounded-lg border border-slate-100 dark:border-slate-600">
         <div>
           <p class="text-sm font-bold text-slate-700 dark:text-gray-100">
             <span class="text-[10px] bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-gray-300 px-1 py-0.5 rounded mr-1">${mealLabel}</span>
-            ${item.foodName} <span class="text-xs text-indigo-500 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-1 rounded ml-1">${item.amount}</span>
+            ${item.foodName} ${badgeHtml} <span class="text-xs text-indigo-500 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-1 rounded ml-1">${item.amount}</span>
           </p>
           <p class="text-[10px] text-slate-500 dark:text-gray-400 uppercase mt-0.5">P: ${item.protein} | C: ${item.carbs} | F: ${item.fat}</p>
         </div>
@@ -488,8 +495,8 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('food-dropdown-wrapper').classList.add('hidden');
       document.getElementById('custom-food-container').classList.remove('hidden');
       
-      // 如果不是由掃描或 AI 帶入的，而是手動切換到自訂，要清空虛擬基準
-      if (document.getElementById('diet-is-ai').value !== 'true') {
+      // 若不是自動帶入的，清空虛擬基準
+      if (document.getElementById('diet-is-ai').value === 'false') {
          selectedFoodBase = null;
          document.getElementById('diet-name').value = '';
          document.getElementById('diet-amount-input').value = 100;
@@ -543,11 +550,10 @@ document.addEventListener('DOMContentLoaded', () => {
     calculateMacros();
   });
 
-  // ▼ 重點：讓份量輸入框能自動觸發換算 ▼
   document.getElementById('diet-amount-input').addEventListener('input', calculateMacros);
 
   function calculateMacros() {
-    if (!selectedFoodBase) return; // 若無基準比例 (純手動自訂) 則不自動計算
+    if (!selectedFoodBase) return; 
     const inputVal = parseFloat(document.getElementById('diet-amount-input').value) || 0;
     const ratio = inputVal / selectedFoodBase.baseAmount;
     document.getElementById('diet-cals').value = Math.round(selectedFoodBase.calories * ratio);
@@ -679,8 +685,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const product = data.product;
         const nutriments = product.nutriments;
         
-        // 標記為掃描結果，切換至自訂表單但不清空 selectedFoodBase
-        document.getElementById('diet-is-ai').value = 'true'; 
+        // ▼ 修正：標記為 barcode 掃描，區分 AI ▼
+        document.getElementById('diet-is-ai').value = 'barcode'; 
         document.getElementById('diet-category').value = 'custom';
         document.getElementById('diet-category').dispatchEvent(new Event('change'));
         
@@ -692,7 +698,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const carb = Number(nutriments['carbohydrates_100g'] || 0);
         const fat = Number(nutriments['fat_100g'] || 0);
 
-        // ▼ 重點：注入虛擬基準，讓輸入框能自動重算 ▼
         selectedFoodBase = {
             baseAmount: 100,
             calories: cals,
@@ -792,11 +797,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const cals = document.getElementById('diet-cals').value;
     if (!foodName || !cals) { showToast('請先選擇食物與份量！', 'error'); return; }
 
-    const isAi = document.getElementById('diet-is-ai').value === 'true';
+    // ▼ 修正：擷取掃描類型 ▼
+    const scanType = document.getElementById('diet-is-ai').value;
     const isCustom = document.getElementById('diet-category').value === 'custom';
     let finalAmount = document.getElementById('diet-amount').value;
     
-    if (isAi || isCustom || document.getElementById('diet-global-search').value.trim() !== '') {
+    if (scanType !== 'false' || isCustom || document.getElementById('diet-global-search').value.trim() !== '') {
       const u = document.getElementById('diet-unit-label').innerText;
       const v = document.getElementById('diet-amount-input').value;
       finalAmount = `${v}${u}`;
@@ -810,7 +816,7 @@ document.addEventListener('DOMContentLoaded', () => {
       protein: document.getElementById('diet-pro').value,
       carbs: document.getElementById('diet-carb').value,
       fat: document.getElementById('diet-fat').value,
-      isAiScanned: isAi
+      isAiScanned: scanType
     });
 
     window.renderDietCart();
@@ -1110,7 +1116,8 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('ai-modal').classList.add('hidden');
       const data = res.data;
       
-      document.getElementById('diet-is-ai').value = 'true';
+      // ▼ 修正：標記為 AI 辨識 ▼
+      document.getElementById('diet-is-ai').value = 'ai';
       document.getElementById('diet-category').value = 'custom';
       document.getElementById('diet-category').dispatchEvent(new Event('change'));
       
@@ -1119,7 +1126,6 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const baseAmtVal = parseFloat(data.estimatedAmount) || 1;
       
-      // ▼ 重點：注入虛擬基準，讓 AI 結果也能手動換算 ▼
       selectedFoodBase = {
           baseAmount: baseAmtVal,
           calories: Number(data.calories) || 0,
@@ -1381,11 +1387,19 @@ function updateDashboardUI(stats) {
   } else {
     if (stats.dietLogs) {
       stats.dietLogs.forEach(log => {
-        const aiBadge = (log.is_ai_scanned === true || log.is_ai_scanned === 'TRUE') ? '<span class="text-[10px] bg-pink-100 text-pink-600 px-2 py-0.5 rounded-full ml-2">✨ AI</span>' : '';
+        
+        // ▼ 修正：依據不同類型繪製徽章 ▼
+        let badgeHtml = '';
+        if (log.is_ai_scanned === 'ai' || log.is_ai_scanned === 'true' || log.is_ai_scanned === true || log.is_ai_scanned === 'TRUE') {
+            badgeHtml = '<span class="text-[10px] font-bold bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 px-2 py-0.5 rounded-full ml-2 border border-pink-200 dark:border-pink-800/50">✨ AI</span>';
+        } else if (log.is_ai_scanned === 'barcode' || log.is_ai_scanned === 'BARCODE') {
+            badgeHtml = '<span class="text-[10px] font-bold bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full ml-2 border border-indigo-200 dark:border-indigo-800/50">🔍 掃碼</span>';
+        }
+        
         container.innerHTML += `
           <div class="bg-white dark:bg-slate-700 p-3 rounded-xl border border-slate-100 dark:border-slate-600 shadow-sm flex justify-between items-center">
             <div>
-              <p class="font-bold text-slate-800 dark:text-gray-100 text-sm">${log.food_name} ${aiBadge}</p>
+              <p class="font-bold text-slate-800 dark:text-gray-100 text-sm">${log.food_name} ${badgeHtml}</p>
               <p class="text-xs text-slate-400 dark:text-gray-400">${log.meal_type} • ${log.amount}</p>
             </div>
             <div class="text-right flex justify-end gap-3 items-center">
