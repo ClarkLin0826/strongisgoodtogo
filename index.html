@@ -395,6 +395,36 @@
       </div>
     </div>
 
+    <div id="barcode-modal" class="fixed inset-0 bg-slate-900/60 z-[70] hidden flex flex-col justify-end backdrop-blur-sm">
+      <div class="bg-white dark:bg-slate-800 rounded-t-3xl p-6">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-bold text-indigo-600 dark:text-indigo-400">🔍 掃描商品條碼</h3>
+          <button id="btn-close-barcode-modal" class="text-slate-400 hover:text-slate-600 dark:hover:text-gray-300 text-3xl leading-none">&times;</button>
+        </div>
+
+        <div class="space-y-4 text-center">
+          <p class="text-sm text-slate-500 dark:text-gray-400 mb-2">對準包裝條碼，秒速帶入熱量與營養素！</p>
+          
+          <div id="barcode-reader-container" class="hidden w-full rounded-2xl overflow-hidden bg-black relative min-h-[250px] shadow-inner border border-slate-200 dark:border-slate-700">
+            <button type="button" id="btn-stop-barcode-camera" class="absolute top-3 right-3 z-10 bg-white/90 text-slate-800 rounded-full w-8 h-8 flex items-center justify-center font-bold shadow-md hover:bg-slate-200">✕</button>
+            <div id="reader" class="w-full"></div>
+          </div>
+
+          <div id="barcode-options-container" class="space-y-4 mt-2">
+             <button type="button" id="btn-start-barcode-camera" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 transition flex items-center justify-center gap-2">
+               <span class="text-2xl">📷</span> 啟動即時鏡頭掃描
+             </button>
+
+             <div class="relative w-full bg-indigo-50 dark:bg-slate-700/50 border-2 border-dashed border-indigo-300 dark:border-indigo-500 rounded-2xl py-6 flex flex-col items-center justify-center hover:bg-indigo-100 dark:hover:bg-slate-700 transition cursor-pointer">
+               <input type="file" id="barcode-file-input" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+               <span class="text-4xl mb-2">📁</span>
+               <span class="text-sm font-bold text-indigo-600 dark:text-indigo-400">點擊相機掃描或從相簿上傳圖片</span>
+             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="diet-modal" class="fixed inset-0 bg-slate-900/60 z-[60] hidden flex flex-col justify-end backdrop-blur-sm">
       <div class="bg-white dark:bg-slate-800 rounded-t-3xl p-6">
         <div class="flex justify-between items-center mb-4">
@@ -405,22 +435,6 @@
             </button>
           </div>
           <button type="button" id="btn-close-diet" class="text-slate-400 hover:text-slate-600 dark:hover:text-gray-300 text-2xl">&times;</button>
-        </div>
-
-        <div id="scanner-container" class="hidden mb-4 border-2 border-indigo-300 dark:border-indigo-600 rounded-xl overflow-hidden relative bg-slate-50 dark:bg-slate-900 flex flex-col shadow-inner">
-          <div class="flex justify-between items-center bg-indigo-50 dark:bg-indigo-900/50 px-3 py-2 border-b border-indigo-100 dark:border-indigo-700">
-            <span class="text-xs font-bold text-indigo-700 dark:text-indigo-300">📷 將條碼置於框內，系統將自動辨識</span>
-            <button type="button" id="btn-close-scanner" class="bg-white dark:bg-slate-700 text-slate-800 dark:text-white rounded-full w-6 h-6 flex items-center justify-center font-bold shadow-sm hover:bg-slate-200 dark:hover:bg-slate-600 text-xs">✕</button>
-          </div>
-          
-          <div id="reader" class="w-full bg-black"></div>
-          
-          <div class="p-2 text-center bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700">
-             <label for="barcode-file-input" class="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 cursor-pointer font-bold inline-flex items-center gap-1">
-               <span>📁</span> 或從相簿選擇條碼圖片
-             </label>
-             <input type="file" id="barcode-file-input" accept="image/*" class="hidden">
-          </div>
         </div>
 
         <form id="add-diet-form" class="space-y-4 max-h-[65vh] overflow-y-auto pr-2 pb-4 custom-scrollbar">
@@ -559,11 +573,11 @@
       <div class="bg-white dark:bg-slate-800 rounded-t-3xl p-6">
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">✨ AI 智能辨識</h3>
-          <button id="btn-close-ai" class="text-slate-400 hover:text-slate-600 dark:hover:text-gray-300 text-2xl">&times;</button>
+          <button id="btn-close-ai" class="text-slate-400 hover:text-slate-600 dark:hover:text-gray-300 text-3xl leading-none">&times;</button>
         </div>
         <div class="space-y-4 text-center">
           <p class="text-sm text-slate-500 dark:text-gray-400 mb-4">✨ 拍下即刻辨識熱量與三大營養素！</p>
-          <div class="border-2 border-dashed border-pink-300 dark:border-pink-800 rounded-2xl p-6 bg-pink-50 dark:bg-slate-900 relative overflow-hidden min-h-[200px] flex items-center justify-center">
+          <div class="border-2 border-dashed border-pink-300 dark:border-pink-800 rounded-2xl p-6 bg-pink-50 dark:bg-slate-900 relative overflow-hidden min-h-[200px] flex items-center justify-center cursor-pointer hover:bg-pink-100 transition">
             <input type="file" id="ai-image-input" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
             <div id="ai-preview-container" class="pointer-events-none flex flex-col items-center">
               <span class="text-5xl mb-2">📸</span>

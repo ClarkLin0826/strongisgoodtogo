@@ -80,7 +80,6 @@ function showToast(message, type = 'success') {
   }, 3000);
 }
 
-// 動態更新 Chart.js 主題
 function updateChartTheme(isDark) {
   try {
     const textColor = isDark ? '#e5e7eb' : '#475569'; 
@@ -288,18 +287,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('date-selector').addEventListener('change', loadDailyData);
 
-  document.getElementById('btn-open-diet').addEventListener('click', () => {
-    document.getElementById('diet-modal').classList.remove('hidden');
-    resetDietFormValues(false, true);
-  });
-  document.getElementById('btn-close-diet').addEventListener('click', () => {
-    document.getElementById('diet-modal').classList.add('hidden');
-    if (html5QrcodeScanner) {
-       html5QrcodeScanner.pause(true);
-       document.getElementById('scanner-container').classList.add('hidden');
-    }
-  });
-
   document.getElementById('btn-open-exercise').addEventListener('click', () => {
     document.getElementById('exercise-modal').classList.remove('hidden');
   });
@@ -497,64 +484,151 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  let html5QrcodeScanner = null;
-  const btnOpenScanner = document.getElementById('btn-open-scanner');
-  const btnCloseScanner = document.getElementById('btn-close-scanner');
-  const scannerContainer = document.getElementById('scanner-container');
 
-  if (btnOpenScanner && scannerContainer) {
-    btnOpenScanner.addEventListener('click', () => {
-      scannerContainer.classList.remove('hidden');
-      if (!html5QrcodeScanner) {
-        html5QrcodeScanner = new Html5QrcodeScanner(
-          "reader", { fps: 10, qrbox: { width: 250, height: 150 }, aspectRatio: 1.0 }, false
-        );
-        html5QrcodeScanner.render(async (decodedText, decodedResult) => {
-          html5QrcodeScanner.pause(true); 
-          showLoading('正在從食品資料庫抓取營養素...');
-          try {
-            const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${decodedText}.json`);
-            const data = await response.json();
-            hideLoading();
-            if (data.status === 1 && data.product && data.product.nutriments) {
-              const product = data.product;
-              const nutriments = product.nutriments;
-              document.getElementById('diet-category').value = 'custom';
-              document.getElementById('diet-category').dispatchEvent(new Event('change'));
-              const productName = product.product_name_zh || product.product_name || '掃描商品';
-              document.getElementById('diet-name').value = productName;
-              const cals = nutriments['energy-kcal_100g'] || (nutriments['energy_100g'] ? nutriments['energy_100g'] / 4.184 : 0);
-              document.getElementById('diet-amount-input').value = 100;
-              document.getElementById('diet-unit-label').innerText = 'g';
-              document.getElementById('diet-cals').value = Math.round(cals);
-              document.getElementById('diet-pro').value = Number(nutriments['proteins_100g'] || 0).toFixed(1);
-              document.getElementById('diet-carb').value = Number(nutriments['carbohydrates_100g'] || 0).toFixed(1);
-              document.getElementById('diet-fat').value = Number(nutriments['fat_100g'] || 0).toFixed(1);
-              showToast(`✅ 成功載入：${productName}`);
-              scannerContainer.classList.add('hidden'); 
-              html5QrcodeScanner.resume(); 
-            } else {
-              showToast('資料庫找不到此商品，請手動輸入', 'error');
-              html5QrcodeScanner.resume();
-            }
-          } catch (err) {
-            hideLoading();
-            showToast('API 連線失敗', 'error');
-            html5QrcodeScanner.resume();
-          }
-        }, (errorMessage) => {});
+  // ==========================================
+  // ▼ 修正：全新客製化掃描條碼 (Html5Qrcode) ▼
+  // ==========================================
+  let html5QrCode = null;
+  let isBarcodeScanning = false;
+  
+  const barcodeModal = document.getElementById('barcode-modal');
+  const btnOpenScanner = document.getElementById('btn-open-scanner');
+  const btnCloseBarcodeModal = document.getElementById('btn-close-barcode-modal');
+  const btnStartCamera = document.getElementById('btn-start-barcode-camera');
+  const btnStopCamera = document.getElementById('btn-stop-barcode-camera');
+  const readerContainer = document.getElementById('barcode-reader-container');
+  const optionsContainer = document.getElementById('barcode-options-container');
+  const barcodeFileInput = document.getElementById('barcode-file-input');
+
+  // 安全關閉相機模組
+  async function stopBarcodeScanner() {
+    if (html5QrCode && isBarcodeScanning) {
+      try {
+        await html5QrCode.stop();
+        isBarcodeScanning = false;
+      } catch (err) { console.log('Camera stop error ignored:', err); }
+    }
+    readerContainer.classList.add('hidden');
+    optionsContainer.classList.remove('hidden');
+  }
+
+  // 共用資料處理函式
+  async function processBarcodeData(decodedText) {
+    await stopBarcodeScanner();
+    barcodeModal.classList.add('hidden');
+    showLoading('正在從食品資料庫抓取營養素...');
+    
+    try {
+      const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${decodedText}.json`);
+      const data = await response.json();
+      hideLoading();
+      
+      if (data.status === 1 && data.product && data.product.nutriments) {
+        const product = data.product;
+        const nutriments = product.nutriments;
+        
+        document.getElementById('diet-category').value = 'custom';
+        document.getElementById('diet-category').dispatchEvent(new Event('change'));
+        
+        const productName = product.product_name_zh || product.product_name || '掃描商品';
+        document.getElementById('diet-name').value = productName;
+        
+        const cals = nutriments['energy-kcal_100g'] || (nutriments['energy_100g'] ? nutriments['energy_100g'] / 4.184 : 0);
+        
+        document.getElementById('diet-amount-input').value = 100;
+        document.getElementById('diet-unit-label').innerText = 'g';
+        document.getElementById('diet-cals').value = Math.round(cals);
+        document.getElementById('diet-pro').value = Number(nutriments['proteins_100g'] || 0).toFixed(1);
+        document.getElementById('diet-carb').value = Number(nutriments['carbohydrates_100g'] || 0).toFixed(1);
+        document.getElementById('diet-fat').value = Number(nutriments['fat_100g'] || 0).toFixed(1);
+        
+        showToast(`✅ 成功載入：${productName}`);
       } else {
-        html5QrcodeScanner.resume();
+        showToast('資料庫找不到此商品，請手動輸入', 'error');
+      }
+    } catch (err) {
+      hideLoading();
+      showToast('API 連線失敗，請稍後再試', 'error');
+    }
+  }
+
+  // 打開掃描專屬 Modal
+  if (btnOpenScanner && barcodeModal) {
+    btnOpenScanner.addEventListener('click', () => {
+      barcodeModal.classList.remove('hidden');
+      if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+    });
+  }
+
+  // 關閉掃描專屬 Modal
+  if (btnCloseBarcodeModal) {
+    btnCloseBarcodeModal.addEventListener('click', async () => {
+      await stopBarcodeScanner();
+      barcodeModal.classList.add('hidden');
+    });
+  }
+
+  // 啟動即時鏡頭
+  if (btnStartCamera) {
+    btnStartCamera.addEventListener('click', async () => {
+      optionsContainer.classList.add('hidden');
+      readerContainer.classList.remove('hidden');
+      
+      try {
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 150 }, aspectRatio: 1.0 },
+          (decodedText) => { processBarcodeData(decodedText); },
+          (errorMessage) => { /* 忽略連掃中的背景報錯 */ }
+        );
+        isBarcodeScanning = true;
+      } catch (err) {
+        showToast('無法啟動相機，請確認權限或改用相簿上傳', 'error');
+        stopBarcodeScanner();
       }
     });
   }
 
-  if (btnCloseScanner && scannerContainer) {
-    btnCloseScanner.addEventListener('click', () => {
-      scannerContainer.classList.add('hidden');
-      if (html5QrcodeScanner) html5QrcodeScanner.pause(true);
+  // 點右上角 X 關閉鏡頭
+  if (btnStopCamera) {
+    btnStopCamera.addEventListener('click', stopBarcodeScanner);
+  }
+
+  // ▼ 重點：相簿上傳觸發自動掃描 ▼
+  if (barcodeFileInput) {
+    barcodeFileInput.addEventListener('change', async (e) => {
+      if (e.target.files.length === 0) return;
+      const file = e.target.files[0];
+      
+      showLoading('辨識圖片條碼中...');
+      try {
+         // 使用核心函式直接掃描圖片檔案
+         const decodedText = await html5QrCode.scanFile(file, true);
+         hideLoading();
+         // 只要成功解碼，瞬間連動 API (無須使用者按確認)
+         processBarcodeData(decodedText);
+      } catch (err) {
+         hideLoading();
+         showToast('圖片中找不到清晰的條碼，請重新拍攝', 'error');
+      }
+      
+      // 清空 input 確保使用者可以重複選同一張圖
+      e.target.value = '';
     });
   }
+
+
+  // ==========================================
+  // Modal 統一管理：飲食 Modal 關閉處理
+  // ==========================================
+  document.getElementById('btn-open-diet').addEventListener('click', () => {
+    document.getElementById('diet-modal').classList.remove('hidden');
+    resetDietFormValues(false, true);
+  });
+  
+  document.getElementById('btn-close-diet').addEventListener('click', () => {
+    document.getElementById('diet-modal').classList.add('hidden');
+  });
 
   window.renderDietCart = function () {
     const list = document.getElementById('diet-cart-list');
@@ -633,7 +707,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // 樂觀更新 (Optimistic UI) 核心模組
   // ==========================================
   
-  // 負責重新計算本地 currentDailyStats 內的數值並推送到畫面
   function applyLocalUpdateAndUpdateUI() {
     let totalCaloriesIn = 0, totalProtein = 0, totalCarbs = 0, totalFat = 0, totalCaloriesOut = 0;
     
@@ -660,7 +733,6 @@ document.addEventListener('DOMContentLoaded', () => {
     updateDashboardUI(window.currentDailyStats);
   }
 
-  // 靜默背景重載 (不顯示 Loading 覆蓋畫面)
   async function loadDailyDataSilent() {
     const res = await apiCall('getDailyStats', { userId: currentUser.user_id, targetDate: currentDate });
     if (res.success) {
@@ -675,13 +747,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
-  // --- 樂觀更新：打包同步雲端 (Diet) ---
   document.getElementById('btn-submit-diet-cart').addEventListener('click', (e) => {
     if (dietCart.length === 0) return;
     
     const logsToSync = [...dietCart]; 
     
-    // 1. 樂觀 UI：瞬間寫入本地記憶體
     if (!window.currentDailyStats.dietLogs) window.currentDailyStats.dietLogs = [];
     logsToSync.forEach(log => {
       window.currentDailyStats.dietLogs.push({
@@ -699,15 +769,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     applyLocalUpdateAndUpdateUI();
     
-    // 瞬間關閉視窗與清空狀態
     document.getElementById('diet-modal').classList.add('hidden');
-    if(html5QrcodeScanner) html5QrcodeScanner.pause(true);
     document.getElementById('add-diet-form').reset();
     dietCart = [];
     renderDietCart();
     showToast('紀錄已新增！(背景同步中...)');
 
-    // 2. 背景非同步上傳至雲端
     apiCall('addDietLogsBatch', { userId: currentUser.user_id, date: currentDate, logs: logsToSync })
       .then(res => {
          if (res.success) {
@@ -719,7 +786,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   });
 
-  // --- 樂觀更新：新增運動 ---
   document.getElementById('add-exercise-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const isCalc = document.getElementById('exercise-mode').value === 'calc';
@@ -736,7 +802,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const duration = document.getElementById('exercise-duration').value;
     const calories = document.getElementById('exercise-cals').value;
 
-    // 1. 樂觀 UI：瞬間寫入本地記憶體
     if (!window.currentDailyStats.exerciseLogs) window.currentDailyStats.exerciseLogs = [];
     window.currentDailyStats.exerciseLogs.push({
        log_id: 'temp-' + Date.now(),
@@ -747,13 +812,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     applyLocalUpdateAndUpdateUI();
 
-    // 瞬間關閉視窗
     document.getElementById('exercise-modal').classList.add('hidden');
     document.getElementById('add-exercise-form').reset();
     document.getElementById('tab-ex-calc').click();
     showToast('運動紀錄已新增！(背景同步中...)');
 
-    // 2. 背景非同步上傳至雲端
     const payload = {
       userId: currentUser.user_id, date: currentDate, type: exName,
       duration: duration, calories: calories
@@ -770,11 +833,9 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   });
 
-  // --- 樂觀更新：刪除紀錄 ---
   window.deleteLogEntry = function (logId, logType) {
     window.showConfirmModal('確定要刪除這筆紀錄嗎？', () => {
       
-      // 1. 樂觀 UI：瞬間從本地記憶體移除
       if (logType === 'diet') {
         window.currentDailyStats.dietLogs = window.currentDailyStats.dietLogs.filter(l => String(l.log_id) !== String(logId));
       } else {
@@ -784,7 +845,6 @@ document.addEventListener('DOMContentLoaded', () => {
       applyLocalUpdateAndUpdateUI();
       showToast('紀錄已刪除！(背景同步中...)');
 
-      // 2. 背景非同步發送刪除指令
       apiCall('deleteLog', { logId, logType })
         .then(res => {
           if (!res.success) {
@@ -795,7 +855,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-  // --- 體態趨勢追蹤 ---
   const btnOpenBodyStats = document.querySelectorAll('#btn-open-bodystat');
   const btnCloseBodyStat = document.getElementById('btn-close-bodystat');
   const bodyStatModal = document.getElementById('bodystat-modal');
@@ -1015,36 +1074,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
 });
-
-window.showConfirmModal = function(message, onConfirmCallback) {
-  const modal = document.getElementById('confirm-modal');
-  const box = document.getElementById('confirm-box');
-  const btnOk = document.getElementById('btn-confirm-ok');
-  const btnCancel = document.getElementById('btn-confirm-cancel');
-  document.getElementById('confirm-message').innerText = message;
-  
-  const newBtnOk = btnOk.cloneNode(true);
-  const newBtnCancel = btnCancel.cloneNode(true);
-  btnOk.parentNode.replaceChild(newBtnOk, btnOk);
-  btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
-  
-  const closeModal = () => {
-    modal.classList.remove('opacity-100');
-    box.classList.remove('scale-100');
-    box.classList.add('scale-95');
-    setTimeout(() => { modal.classList.add('hidden'); }, 300);
-  };
-
-  newBtnCancel.addEventListener('click', closeModal);
-  newBtnOk.addEventListener('click', () => { closeModal(); onConfirmCallback(); });
-  
-  modal.classList.remove('hidden');
-  requestAnimationFrame(() => {
-    modal.classList.add('opacity-100');
-    box.classList.remove('scale-95');
-    box.classList.add('scale-100');
-  });
-};
 
 function initDashboard() {
   showView('dashboard-view');
